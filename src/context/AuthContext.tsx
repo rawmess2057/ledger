@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useStore } from "@/store";
+import api from "@/lib/api";
 
 export interface UserStats {
   streak: number;
@@ -12,9 +12,10 @@ export interface UserStats {
   tasksCompleted: number;
   tasksTotal: number;
   weeklyData: { date: string; minutes: number; questions: number }[];
+  accuracyRate: number;
 }
 
-interface User {
+export interface User {
   id: string;
   name: string;
   email: string;
@@ -24,7 +25,7 @@ interface User {
   dailyHours: number;
   avatar?: string;
   joinedAt: string;
-  stats: UserStats;
+  stats?: UserStats;
 }
 
 interface AuthContextType {
@@ -34,9 +35,9 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (data: RegisterData) => Promise<boolean>;
   logout: () => void;
-  updateProfile: (data: Partial<User>) => void;
+  updateProfile: (data: Partial<User>) => Promise<void>;
   updateStats: (stats: Partial<UserStats>) => void;
-  recordStudySession: (minutes: number, questions: number, correct: number) => void;
+  refreshUser: () => Promise<void>;
 }
 
 interface RegisterData {
@@ -51,203 +52,179 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const createInitialStats = (): UserStats => ({
-  streak: 1,
-  lastStudyDate: new Date().toISOString().split("T")[0],
-  totalQuestions: 0,
-  correctAnswers: 0,
-  totalStudyMinutes: 0,
-  tasksCompleted: 0,
-  tasksTotal: 0,
-  weeklyData: Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (6 - i));
-    return {
-      date: date.toISOString().split("T")[0],
-      minutes: 0,
-      questions: 0,
-    };
-  }),
-});
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const store = useStore();
+  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Load user on mount
   useEffect(() => {
-    if (typeof window === "undefined") {
-      setIsLoading(false);
-      return;
-    }
-    
-    const storedUser = localStorage.getItem("ledger_user");
-    if (storedUser) {
+    const initAuth = async () => {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        const userWithStats = parsedUser.stats ? parsedUser : {
-          ...parsedUser,
-          stats: createInitialStats(),
-        };
-        setUser(userWithStats);
-        store.setAuthenticated(true);
-      } catch (e) {
-        // Invalid stored data
+        api.loadToken();
+        const storedToken = typeof window !== "undefined" 
+          ? localStorage.getItem("ledger_token") 
+          : null;
+        
+        if (storedToken) {
+          const userData = await api.getMe();
+          // Transform API response to match frontend User interface
+          const transformedUser: User = {
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            phone: userData.phone,
+            level: userData.level,
+            examDate: userData.exam_date,
+            dailyHours: userData.daily_hours,
+            avatar: userData.avatar,
+            joinedAt: userData.created_at,
+            stats: userData.stats ? {
+              streak: userData.stats.streak,
+              lastStudyDate: userData.stats.last_study_date,
+              totalQuestions: userData.stats.total_questions,
+              correctAnswers: userData.stats.correct_answers,
+              totalStudyMinutes: userData.stats.total_study_minutes,
+              tasksCompleted: userData.stats.tasks_completed,
+              tasksTotal: userData.stats.tasks_total,
+              weeklyData: userData.stats.weekly_data || [],
+              accuracyRate: userData.stats.accuracy_rate || 0,
+            } : undefined,
+          };
+          setUser(transformedUser);
+        }
+      } catch (error) {
+        console.error("Failed to load user:", error);
+        api.clearToken();
+      } finally {
+        setIsLoading(false);
+        setIsInitialized(true);
       }
-    }
-    setIsLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    };
+
+    initAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (email && password.length >= 6) {
-      const storedUser = localStorage.getItem("ledger_user");
-      const userData = storedUser ? JSON.parse(storedUser) : null;
-
-      if (userData) {
-        const userWithStats = userData.stats ? userData : {
-          ...userData,
-          stats: createInitialStats(),
-        };
-        setUser(userWithStats);
-        store.setAuthenticated(true);
-        store.setUser(userWithStats);
-      }
-      setIsLoading(false);
-      return true;
+  const refreshUser = async () => {
+    try {
+      const userData = await api.getMe();
+      const transformedUser: User = {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        level: userData.level,
+        examDate: userData.exam_date,
+        dailyHours: userData.daily_hours,
+        avatar: userData.avatar,
+        joinedAt: userData.created_at,
+        stats: userData.stats ? {
+          streak: userData.stats.streak,
+          lastStudyDate: userData.stats.last_study_date,
+          totalQuestions: userData.stats.total_questions,
+          correctAnswers: userData.stats.correct_answers,
+          totalStudyMinutes: userData.stats.total_study_minutes,
+          tasksCompleted: userData.stats.tasks_completed,
+          tasksTotal: userData.stats.tasks_total,
+          weeklyData: userData.stats.weekly_data || [],
+          accuracyRate: userData.stats.accuracy_rate || 0,
+        } : undefined,
+      };
+      setUser(transformedUser);
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
     }
-    setIsLoading(false);
-    return false;
+  };
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      await api.login(email, password);
+      await refreshUser();
+      return true;
+    } catch (error) {
+      console.error("Login failed:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const register = async (data: RegisterData): Promise<boolean> => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      setIsLoading(true);
+      
+      if (data.password !== data.confirmPassword) {
+        throw new Error("Passwords do not match");
+      }
 
-    if (data.password !== data.confirmPassword) {
-      setIsLoading(false);
+      await api.register({
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+        level: data.level,
+        exam_date: data.examDate,
+        daily_hours: 3,
+      });
+
+      // Auto login after registration
+      await api.login(data.email, data.password);
+      await refreshUser();
+      return true;
+    } catch (error) {
+      console.error("Registration failed:", error);
       return false;
+    } finally {
+      setIsLoading(false);
     }
-
-    const newUser: User = {
-      id: `usr_${Date.now()}`,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      level: data.level,
-      examDate: data.examDate,
-      dailyHours: 3,
-      avatar: data.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2),
-      joinedAt: new Date().toISOString().split("T")[0],
-      stats: createInitialStats(),
-    };
-
-    setUser(newUser);
-    localStorage.setItem("ledger_user", JSON.stringify(newUser));
-    store.setAuthenticated(true);
-    store.setUser(newUser);
-    store.updateProgress({
-      totalQuestions: 0,
-      correctAnswers: 0,
-      streak: 1,
-    });
-    setIsLoading(false);
-    return true;
   };
 
   const logout = () => {
+    api.clearToken();
     setUser(null);
-    localStorage.removeItem("ledger_user");
-    store.setAuthenticated(false);
-    store.setUser(null);
-    store.updateProgress({
-      totalQuestions: 0,
-      correctAnswers: 0,
-      streak: 0,
-    });
   };
 
-  const updateProfile = (data: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...data };
-      setUser(updatedUser);
-      localStorage.setItem("ledger_user", JSON.stringify(updatedUser));
-      store.setUser(updatedUser);
+  const updateProfile = async (data: Partial<User>) => {
+    try {
+      const apiData: Record<string, unknown> = {};
+      if (data.name) apiData.name = data.name;
+      if (data.phone) apiData.phone = data.phone;
+      if (data.level) apiData.level = data.level;
+      if (data.examDate) apiData.exam_date = data.examDate;
+      if (data.dailyHours) apiData.daily_hours = data.dailyHours;
+
+      await api.updateMe(apiData);
+      await refreshUser();
+    } catch (error) {
+      console.error("Failed to update profile:", error);
     }
   };
 
   const updateStats = (statsUpdate: Partial<UserStats>) => {
     if (user) {
-      const updatedStats = { ...user.stats, ...statsUpdate };
-      const updatedUser = { ...user, stats: updatedStats };
-      setUser(updatedUser);
-      localStorage.setItem("ledger_user", JSON.stringify(updatedUser));
-      store.updateProgress({
-        totalQuestions: updatedStats.totalQuestions,
-        correctAnswers: updatedStats.correctAnswers,
-        streak: updatedStats.streak,
+      setUser({
+        ...user,
+        stats: {
+          ...user.stats!,
+          ...statsUpdate,
+        },
       });
     }
-  };
-
-  const recordStudySession = (minutes: number, questions: number, correct: number) => {
-    if (!user || !user.stats) return;
-
-    const today = new Date().toISOString().split("T")[0];
-    const lastStudyDate = user.stats.lastStudyDate;
-    
-    let newStreak = user.stats.streak;
-    
-    if (lastStudyDate === today) {
-      newStreak = user.stats.streak;
-    } else {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split("T")[0];
-      
-      if (lastStudyDate === yesterdayStr) {
-        newStreak = user.stats.streak + 1;
-      } else {
-        newStreak = 1;
-      }
-    }
-
-    const updatedWeeklyData = user.stats.weeklyData.map((day) => {
-      if (day.date === today) {
-        return {
-          ...day,
-          minutes: day.minutes + minutes,
-          questions: day.questions + questions,
-        };
-      }
-      return day;
-    });
-
-    updateStats({
-      streak: newStreak,
-      lastStudyDate: today,
-      totalQuestions: user.stats.totalQuestions + questions,
-      correctAnswers: user.stats.correctAnswers + correct,
-      totalStudyMinutes: user.stats.totalStudyMinutes + minutes,
-      weeklyData: updatedWeeklyData,
-    });
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && isInitialized,
         isLoading,
         login,
         register,
         logout,
         updateProfile,
         updateStats,
-        recordStudySession,
+        refreshUser,
       }}
     >
       {children}

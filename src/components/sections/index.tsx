@@ -116,7 +116,7 @@ export function Features() {
   ];
 
   return (
-    <section className="py-20 px-6">
+    <section id="features" className="py-20 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">Everything You Need to Ace ICAN</h2>
@@ -166,7 +166,7 @@ export function HowItWorks() {
   ];
 
   return (
-    <section className="py-20 px-6 bg-navy-light/50">
+    <section id="how-it-works" className="py-20 px-6 bg-navy-light/50">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">How Ledger Works</h2>
@@ -215,7 +215,7 @@ export function Testimonials() {
   ];
 
   return (
-    <section className="py-20 px-6">
+    <section id="testimonials" className="py-20 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">Trusted by 500+ CA Students</h2>

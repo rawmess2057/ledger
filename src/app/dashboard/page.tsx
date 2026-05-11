@@ -55,7 +55,7 @@ function StatCard({ icon: Icon, label, value, trend, color }: {
 }
 
 function DashboardContent() {
-  const { user, recordStudySession } = useAuth();
+  const { user } = useAuth();
   const { progress } = useStore();
   
   const userStats = user?.stats;
@@ -63,11 +63,11 @@ function DashboardContent() {
   const totalStudyHours = userStats ? Math.floor(userStats.totalStudyMinutes / 60) : 0;
   const studyMinutes = userStats ? userStats.totalStudyMinutes % 60 : 0;
   
-  const accuracyRate = userStats && userStats.totalQuestions > 0 
-    ? Math.round((userStats.correctAnswers / userStats.totalQuestions) * 100) 
-    : 0;
+  const accuracyRate = userStats?.accuracyRate || 0;
 
-  const overallMastery = Object.values(progress.subjectMastery).reduce((a, b) => a + b, 0) / Object.keys(progress.subjectMastery).length;
+  const overallMastery = userStats?.totalQuestions 
+    ? Math.round((userStats.correctAnswers / userStats.totalQuestions) * 100)
+    : Object.values(progress.subjectMastery).reduce((a, b) => a + b, 0) / Object.keys(progress.subjectMastery).length;
 
   return (
     <div className="max-w-6xl mx-auto py-8">

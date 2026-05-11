@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ledger - AI-Powered CA Practice Platform
 
-## Getting Started
+## Project Structure
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+ledger/
+├── backend/          # FastAPI backend
+│   ├── app/
+│   │   ├── models/     # SQLAlchemy models
+│   │   ├── schemas/     # Pydantic schemas
+│   │   ├── routers/     # API endpoints
+│   │   └── services/    # Business logic
+│   ├── main.py          # FastAPI app
+│   ├── requirements.txt
+│   └── Dockerfile
+├── docker/          # Docker setup
+│   ├── docker-compose.yml
+│   └── seed.sql         # Initial data
+├── src/              # Next.js frontend
+│   ├── app/           # Pages
+│   ├── components/    # UI components
+│   ├── context/       # Auth context
+│   ├── lib/          # API client
+│   └── store/        # State management
+└── package.json
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Quick Start
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Option 1: Docker (Recommended)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Start PostgreSQL and API
+cd docker
+docker-compose up -d
 
-## Learn More
+# API will be available at http://localhost:8000
+# API docs at http://localhost:8000/docs
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Option 2: Local Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Backend:**
+```bash
+cd backend
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-## Deploy on Vercel
+# Install dependencies
+pip install -r requirements.txt
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Set environment variables
+export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ledger
+export DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@localhost:5432/ledger
+export SECRET_KEY=your-secret-key
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Create database
+createdb ledger
+
+# Run the API
+uvicorn main:app --reload
+```
+
+**Frontend:**
+```bash
+cd frontend  # or /
+
+npm install
+npm run dev
+```
+
+## Environment Variables
+
+### Backend (.env)
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ledger
+DATABASE_URL_ASYNC=postgresql+asyncpg://postgres:postgres@localhost:5432/ledger
+SECRET_KEY=your-super-secret-key
+```
+
+### Frontend (.env.local)
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+```
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login (returns JWT)
+- `POST /api/auth/login/json` - JSON login
+- `GET /api/auth/me` - Get current user
+
+### Quiz
+- `GET /api/quiz/questions` - List questions
+- `GET /api/quiz/questions/subjects` - List subjects
+- `POST /api/quiz/start` - Start quiz session
+- `POST /api/quiz/{id}/submit` - Submit quiz
+- `GET /api/quiz/history` - Quiz history
+
+### Tasks
+- `GET /api/tasks` - List tasks
+- `POST /api/tasks` - Create task
+- `PUT /api/tasks/{id}` - Update task
+- `PATCH /api/tasks/{id}/complete` - Toggle complete
+- `DELETE /api/tasks/{id}` - Delete task
+
+### Progress
+- `GET /api/progress/overview` - User stats
+- `GET /api/progress/mastery` - Subject mastery
+- `GET /api/progress/weekly` - Weekly data
+
+## Database Schema
+
+### Tables
+- `users` - User accounts
+- `user_stats` - Study statistics
+- `questions` - Question bank
+- `quiz_sessions` - Quiz attempts
+- `quiz_answers` - Individual answers
+- `tasks` - Study tasks
+- `subjects` - ICAN subjects
+- `subject_mastery` - Per-subject progress
+
+## Tech Stack
+
+- **Frontend**: Next.js 16, React, TypeScript, TailwindCSS
+- **Backend**: FastAPI, Python 3.11+
+- **Database**: PostgreSQL 15
+- **ORM**: SQLAlchemy 2.0
+- **Auth**: JWT (python-jose)
+- **Password**: bcrypt (passlib)

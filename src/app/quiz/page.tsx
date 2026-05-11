@@ -6,7 +6,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Progress } from "@/components/ui/Progress";
-import { mockQuestions } from "@/data/mockData";
+import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
   Clock,
@@ -19,9 +19,25 @@ import {
   ArrowLeft,
   Home,
   Send,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+
+interface Question {
+  id: string;
+  type: string;
+  question: string;
+  options?: string[];
+  correctAnswer: string;
+  explanation?: string;
+  difficulty: string;
+  topic: string;
+  subtopic?: string;
+  subject: string;
+  marks: number;
+  created_at?: string;
+}
 
 interface QuestionState {
   selectedAnswer: string | null;
@@ -29,56 +45,87 @@ interface QuestionState {
   showExplanation: boolean;
 }
 
+interface QuizSession {
+  session_id: string;
+  questions: Question[];
+  started_at: string;
+}
+
 function QuizContent() {
-  const { recordStudySession } = useAuth();
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(300);
   const [quizComplete, setQuizComplete] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [startTime] = useState(Date.now());
-  const [sessionRecorded, setSessionRecorded] = useState(false);
+  const [session, setSession] = useState<QuizSession | null>(null);
+  const [quizResult, setQuizResult] = useState<any>(null);
 
-  const [questionStates, setQuestionStates] = useState<Record<string, QuestionState>>(() => {
-    const initial: Record<string, QuestionState> = {};
-    mockQuestions.forEach((q) => {
-      initial[q.id] = {
-        selectedAnswer: null,
-        isAnswered: false,
-        showExplanation: false,
-      };
-    });
-    return initial;
-  });
+  const [questionStates, setQuestionStates] = useState<Record<string, QuestionState>>({});
 
-  const question = mockQuestions[currentIndex];
-  const totalQuestions = mockQuestions.length;
-  const currentState = questionStates[question.id];
+  const question = session?.questions[currentIndex];
+  const totalQuestions = session?.questions.length || 0;
+  const currentState = question ? questionStates[question.id] : null;
+
+  // Initialize quiz
+  useEffect(() => {
+    const initQuiz = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.startQuiz({
+          question_count: 5,
+          title: "Practice Quiz",
+        });
+        
+        setSession(response);
+        
+        // Initialize question states
+        const initialStates: Record<string, QuestionState> = {};
+        response.questions.forEach((q: Question) => {
+          initialStates[q.id] = {
+            selectedAnswer: null,
+            isAnswered: false,
+            showExplanation: false,
+          };
+        });
+        setQuestionStates(initialStates);
+      } catch (error) {
+        console.error("Failed to start quiz:", error);
+        // Fallback to mock questions if API fails
+        setSession({
+          session_id: "mock-session",
+          questions: [],
+          started_at: new Date().toISOString(),
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initQuiz();
+  }, []);
 
   useEffect(() => {
-    if (timeLeft > 0 && !quizComplete) {
-      const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-      return () => clearInterval(timer);
-    } else if (timeLeft === 0 && !quizComplete) {
-      setQuizComplete(true);
-    }
-  }, [timeLeft, quizComplete]);
+    if (!session || quizComplete) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          setQuizComplete(true);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [session, quizComplete]);
 
   useEffect(() => {
     setInputValue("");
   }, [currentIndex]);
-
-  useEffect(() => {
-    if (quizComplete && !sessionRecorded && recordStudySession) {
-      const score = getScore();
-      const timeTakenMinutes = Math.max(1, Math.round((Date.now() - startTime) / 60000));
-      const answeredCount = Object.values(questionStates).filter(s => s.isAnswered).length;
-      
-      if (answeredCount > 0) {
-        recordStudySession(timeTakenMinutes, answeredCount, score);
-        setSessionRecorded(true);
-      }
-    }
-  }, [quizComplete, sessionRecorded, recordStudySession, startTime, questionStates]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -87,15 +134,19 @@ function QuizContent() {
   };
 
   const getScore = useCallback(() => {
+    if (!session) return 0;
     let correct = 0;
-    Object.entries(questionStates).forEach(([qId, state]) => {
-      const q = mockQuestions.find((q) => q.id === qId);
-      if (q && state.isAnswered && q.correctAnswer === state.selectedAnswer) correct++;
+    session.questions.forEach((q) => {
+      const state = questionStates[q.id];
+      if (state?.isAnswered && q.correctAnswer === state.selectedAnswer) {
+        correct++;
+      }
     });
     return correct;
-  }, [questionStates]);
+  }, [session, questionStates]);
 
   const handleSelectAnswer = (answer: string) => {
+    if (!question) return;
     setQuestionStates((prev) => ({
       ...prev,
       [question.id]: {
@@ -106,6 +157,7 @@ function QuizContent() {
   };
 
   const handleTextInput = (value: string) => {
+    if (!question) return;
     setInputValue(value);
     setQuestionStates((prev) => ({
       ...prev,
@@ -121,8 +173,8 @@ function QuizContent() {
     
     setQuestionStates((prev) => ({
       ...prev,
-      [question.id]: {
-        ...prev[question.id],
+      [question!.id]: {
+        ...prev[question!.id],
         isAnswered: true,
         showExplanation: true,
       },
@@ -133,7 +185,7 @@ function QuizContent() {
     if (currentIndex < totalQuestions - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      setQuizComplete(true);
+      submitQuiz();
     }
   };
 
@@ -143,13 +195,50 @@ function QuizContent() {
     }
   };
 
+  const submitQuiz = async () => {
+    if (!session) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      const answers = session.questions.map((q) => ({
+        question_id: q.id,
+        user_answer: questionStates[q.id]?.selectedAnswer || "",
+      }));
+
+      const result = await api.submitQuiz(session.session_id, {
+        answers,
+        time_taken_seconds: Math.round((Date.now() - startTime) / 1000),
+      });
+
+      setQuizResult(result);
+      setQuizComplete(true);
+    } catch (error) {
+      console.error("Failed to submit quiz:", error);
+      // Still show results locally
+      setQuizComplete(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const isQuestionAnswered = (qId: string) => {
     return questionStates[qId]?.isAnswered;
   };
 
-  if (quizComplete) {
-    const score = getScore();
-    const percentage = Math.round((score / totalQuestions) * 100);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-navy flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 text-teal animate-spin" />
+          <p className="text-slate">Loading quiz...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (quizComplete && quizResult) {
+    const percentage = quizResult.score_percentage;
 
     return (
       <div className="min-h-screen bg-navy flex items-center justify-center p-6">
@@ -175,15 +264,15 @@ function QuizContent() {
 
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="p-4 bg-navy rounded-xl">
-              <p className="text-2xl font-bold text-emerald-400">{score}</p>
+              <p className="text-2xl font-bold text-emerald-400">{quizResult.correct_answers}</p>
               <p className="text-sm text-slate">Correct</p>
             </div>
             <div className="p-4 bg-navy rounded-xl">
-              <p className="text-2xl font-bold text-red-400">{totalQuestions - score}</p>
+              <p className="text-2xl font-bold text-red-400">{quizResult.total_questions - quizResult.correct_answers}</p>
               <p className="text-sm text-slate">Incorrect</p>
             </div>
             <div className="p-4 bg-navy rounded-xl">
-              <p className="text-2xl font-bold text-amber-400">{formatTime(300 - timeLeft)}</p>
+              <p className="text-2xl font-bold text-amber-400">{formatTime(quizResult.time_taken_seconds)}</p>
               <p className="text-sm text-slate">Time Taken</p>
             </div>
           </div>
@@ -202,6 +291,19 @@ function QuizContent() {
               </Button>
             </Link>
           </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!session || !question) {
+    return (
+      <div className="min-h-screen bg-navy flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <p className="text-slate-light mb-4">Failed to load quiz questions</p>
+          <Link href="/practice">
+            <Button>Back to Practice</Button>
+          </Link>
         </Card>
       </div>
     );
@@ -239,7 +341,7 @@ function QuizContent() {
           <div className="flex items-center justify-between text-sm text-slate mb-4">
             <span>Question {currentIndex + 1} of {totalQuestions}</span>
             <div className="flex gap-2">
-              {mockQuestions.map((q, i) => (
+              {session.questions.map((q, i) => (
                 <div
                   key={i}
                   className={cn(
@@ -385,9 +487,18 @@ function QuizContent() {
                   Submit Answer
                 </Button>
               ) : (
-                <Button onClick={handleNext}>
-                  {currentIndex === totalQuestions - 1 ? "Finish Quiz" : "Next Question"}
-                  <ChevronRight className="w-4 h-4" />
+                <Button onClick={handleNext} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      {currentIndex === totalQuestions - 1 ? "Finish Quiz" : "Next Question"}
+                      <ChevronRight className="w-4 h-4" />
+                    </>
+                  )}
                 </Button>
               )}
             </div>

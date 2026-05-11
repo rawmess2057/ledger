@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Hero, Features, HowItWorks, Testimonials, CTASection, Footer } from "@/components/sections";
 
 export default function Home() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="min-h-screen">
@@ -22,9 +22,7 @@ export default function Home() {
             <a href="#features" className="text-slate hover:text-teal transition-colors">Features</a>
             <a href="#how-it-works" className="text-slate hover:text-teal transition-colors">How It Works</a>
             <a href="#testimonials" className="text-slate hover:text-teal transition-colors">Reviews</a>
-            {isAuthenticated ? (
-              <Link href="/dashboard" className="text-teal hover:underline">Dashboard</Link>
-            ) : (
+            {!isAuthenticated && (
               <>
                 <Link href="/login" className="text-slate hover:text-teal transition-colors">Sign In</Link>
                 <Link href="/register" className="text-teal hover:underline">Sign Up</Link>
