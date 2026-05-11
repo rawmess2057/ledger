@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar, TopBar, MobileNav, Breadcrumb } from "@/components/Navigation";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
-import { mockStudyPlan } from "@/data/mockData";
+import api from "@/lib/api";
+import { cn } from "@/lib/utils";
 import {
   Calendar,
   ChevronLeft,
@@ -21,46 +22,50 @@ import {
   Trash2,
   Edit2,
   X,
+  Loader2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface Task {
   id: string;
   title: string;
   subject: string;
-  topic: string;
+  topic?: string;
   completed: boolean;
-  dueDate: Date;
-  type: "quiz" | "revision" | "mock" | "practice";
-  priority: "high" | "medium" | "low";
+  due_date: string;
+  task_type: string;
+  priority: string;
   duration: number;
 }
 
 const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const currentMonth = new Date().getMonth();
-const currentYear = new Date().getFullYear();
 
-const subjects = ["Accounting", "Assurance", "Business & Finance", "Law", "Taxation"];
+const subjects = [
+  { value: "accounting", label: "Accounting" },
+  { value: "assurance", label: "Assurance & IS" },
+  { value: "business-finance", label: "Business & Finance" },
+  { value: "law", label: "Business Law" },
+  { value: "taxation", label: "Taxation" },
+];
 const taskTypes = [
-  { value: "practice", label: "Practice", icon: "✏️" },
-  { value: "revision", label: "Revision", icon: "📖" },
-  { value: "quiz", label: "Quiz", icon: "❓" },
-  { value: "mock", label: "Mock Exam", icon: "📝" },
+  { value: "practice", label: "Practice" },
+  { value: "revision", label: "Revision" },
+  { value: "quiz", label: "Quiz" },
+  { value: "mock", label: "Mock Exam" },
 ];
 
-function AddTaskModal({ 
-  isOpen, 
-  onClose, 
+function AddTaskModal({
+  isOpen,
+  onClose,
   onAdd,
-  selectedDate 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
+  selectedDate
+}: {
+  isOpen: boolean;
+  onClose: () => void;
   onAdd: (task: Task) => void;
   selectedDate: Date;
 }) {
   const [title, setTitle] = useState("");
-  const [subject, setSubject] = useState(subjects[0]);
+  const [subject, setSubject] = useState(subjects[0].value);
   const [taskType, setTaskType] = useState("practice");
   const [priority, setPriority] = useState("medium");
   const [duration, setDuration] = useState(45);
@@ -69,15 +74,19 @@ function AddTaskModal({
     e.preventDefault();
     if (!title.trim()) return;
 
+    const year = selectedDate.getFullYear();
+    const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = selectedDate.getDate().toString().padStart(2, '0');
+    
     const newTask: Task = {
-      id: `task_${Date.now()}`,
+      id: `temp_${Date.now()}`,
       title: title.trim(),
       subject,
       topic: "General",
       completed: false,
-      dueDate: selectedDate,
-      type: taskType as Task["type"],
-      priority: priority as Task["priority"],
+      due_date: `${year}-${month}-${day}T12:00:00`,
+      task_type: taskType,
+      priority,
       duration,
     };
 
@@ -120,7 +129,7 @@ function AddTaskModal({
               className="w-full p-3 bg-navy border border-slate/20 rounded-xl focus:outline-none focus:border-teal"
             >
               {subjects.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
           </div>
@@ -140,8 +149,7 @@ function AddTaskModal({
                       : "border-slate/20 hover:border-teal/50"
                   )}
                 >
-                  <span className="text-lg">{type.icon}</span>
-                  <p className="text-sm mt-1">{type.label}</p>
+                  <p className="text-sm font-medium">{type.label}</p>
                 </button>
               ))}
             </div>
@@ -190,14 +198,34 @@ function AddTaskModal({
 }
 
 function PlannerContent() {
-  const { user, updateStats } = useAuth();
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>(mockStudyPlan as Task[]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay() === 0 ? 6 : new Date(currentYear, currentMonth, 1).getDay() - 1;
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  async function fetchTasks() {
+    try {
+      setLoading(true);
+      const data = await api.getTasks();
+      setTasks(data.tasks || []);
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error);
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const navigateMonth = (direction: number) => {
     const newDate = new Date(currentDate);
@@ -205,47 +233,77 @@ function PlannerContent() {
     setCurrentDate(newDate);
   };
 
-  const tasksForDate = (date: number) => {
+    const getDateFromString = (dateStr: string) => {
+    const parts = dateStr.split('T')[0].split('-');
+    return {
+      year: parseInt(parts[0]),
+      month: parseInt(parts[1]) - 1,
+      day: parseInt(parts[2]),
+    };
+  };
+
+  const tasksForDate = (day: number) => {
     return tasks.filter((task) => {
-      const taskDate = new Date(task.dueDate);
+      const { year, month, day: d } = getDateFromString(task.due_date);
       return (
-        taskDate.getDate() === date &&
-        taskDate.getMonth() === currentMonth &&
-        taskDate.getFullYear() === currentYear
+        d === day &&
+        month === currentMonth &&
+        year === currentYear
       );
     });
   };
 
   const selectedDateTasks = tasksForDate(selectedDate.getDate());
 
-  const handleAddTask = (newTask: Task) => {
-    setTasks([...tasks, newTask]);
-    if (user?.stats) {
-      updateStats({ tasksTotal: user.stats.tasksTotal + 1 });
+  const handleAddTask = async (newTask: Task) => {
+    try {
+      const createdTask = await api.createTask({
+        title: newTask.title,
+        subject: newTask.subject,
+        topic: newTask.topic || "General",
+        task_type: newTask.task_type,
+        priority: newTask.priority,
+        duration: newTask.duration,
+        due_date: newTask.due_date,
+      });
+      setTasks([...tasks, createdTask]);
+    } catch (error) {
+      console.error("Failed to create task:", error);
+      alert("Failed to add task. Please try again.");
     }
   };
 
-  const handleToggleTask = (taskId: string) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, completed: !task.completed } : task
-    ));
-    const task = tasks.find(t => t.id === taskId);
-    if (task && !task.completed && user?.stats) {
-      updateStats({ tasksCompleted: user.stats.tasksCompleted + 1 });
+  const handleToggleTask = async (taskId: string) => {
+    try {
+      const updatedTask = await api.toggleTaskComplete(taskId);
+      setTasks(tasks.map(task =>
+        task.id === taskId ? { ...task, completed: updatedTask.completed } : task
+      ));
+    } catch (error) {
+      console.error("Failed to toggle task:", error);
     }
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
-    setTasks(tasks.filter(task => task.id !== taskId));
-    if (task?.completed && user?.stats && user.stats.tasksCompleted > 0) {
-      updateStats({ tasksCompleted: user.stats.tasksCompleted - 1, tasksTotal: Math.max(0, user.stats.tasksTotal - 1) });
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await api.deleteTask(taskId);
+      setTasks(tasks.filter(task => task.id !== taskId));
+    } catch (error) {
+      console.error("Failed to delete task:", error);
     }
   };
 
   const completedTasks = tasks.filter(t => t.completed).length;
   const pendingTasks = tasks.filter(t => !t.completed).length;
   const totalStudyHours = tasks.reduce((sum, t) => sum + (t.completed ? t.duration : 0), 0) / 60;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-teal" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto py-8">
@@ -257,8 +315,8 @@ function PlannerContent() {
           <p className="text-slate-light">Plan your studies and stay on track</p>
         </div>
         <Button onClick={() => setShowAddModal(true)}>
-          <Sparkles className="w-4 h-4" />
-          Generate AI Plan
+          <Plus className="w-4 h-4" />
+          Add Task
         </Button>
       </div>
 
@@ -297,8 +355,8 @@ function PlannerContent() {
               {[...Array(daysInMonth)].map((_, i) => {
                 const day = i + 1;
                 const dayTasks = tasksForDate(day);
-                const isSelected = selectedDate.getDate() === day;
-                const isToday = new Date().getDate() === day && new Date().getMonth() === currentMonth;
+                const isSelected = selectedDate.getDate() === day && selectedDate.getMonth() === currentMonth && selectedDate.getFullYear() === currentYear;
+                const isToday = new Date().getDate() === day && new Date().getMonth() === currentMonth && new Date().getFullYear() === currentYear;
 
                 return (
                   <button
@@ -329,7 +387,7 @@ function PlannerContent() {
                         ))}
                       </div>
                     )}
-              </button>
+                  </button>
                 );
               })}
             </div>
@@ -367,7 +425,7 @@ function PlannerContent() {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <button 
+                        <button
                           onClick={() => handleToggleTask(task.id)}
                           className="flex-shrink-0"
                         >
@@ -385,10 +443,10 @@ function PlannerContent() {
                         <Trash2 className="w-4 h-4 text-red-400" />
                       </button>
                     </div>
-                    <p className="text-xs text-slate ml-7">{task.subject}</p>
+                    <p className="text-xs text-slate ml-7 capitalize">{task.subject.replace("-", " & ")}</p>
                     <div className="flex items-center gap-3 mt-2 ml-7">
                       <span className={cn(
-                        "text-xs px-2 py-0.5 rounded-full",
+                        "text-xs px-2 py-0.5 rounded-full capitalize",
                         task.priority === "high" ? "bg-red-500/20 text-red-400" :
                         task.priority === "medium" ? "bg-amber-500/20 text-amber-400" : "bg-slate/20 text-slate"
                       )}>
@@ -440,7 +498,7 @@ function PlannerContent() {
             <p className="text-sm text-slate-light mb-4">
               Based on your weak areas, focus on Journal Entries and VAT calculation today.
             </p>
-            <Button size="sm" variant="secondary" className="w-full">
+            <Button size="sm" variant="secondary" className="w-full" onClick={() => window.location.href = "/quiz"}>
               <Play className="w-4 h-4" />
               Start Suggested Practice
             </Button>
