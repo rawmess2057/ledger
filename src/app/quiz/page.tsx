@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Progress } from "@/components/ui/Progress";
 import api from "@/lib/api";
+import { emitQuizEvent } from "@/lib/taskEvents";
 import { cn } from "@/lib/utils";
 import {
   Clock,
@@ -213,6 +214,7 @@ function QuizContent() {
 
       setQuizResult(result);
       setQuizComplete(true);
+      emitQuizEvent('ledger:quiz:completed', result);
     } catch (error) {
       console.error("Failed to submit quiz:", error);
       // Still show results locally

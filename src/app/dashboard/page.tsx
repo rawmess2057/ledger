@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { TASK_EVENTS, emitTaskEvent } from "@/lib/taskEvents";
+import { TASK_EVENTS, QUIZ_EVENTS, emitTaskEvent } from "@/lib/taskEvents";
 import {
   TrendingUp,
   Flame,
@@ -91,6 +91,18 @@ function DashboardContent() {
     priority: string;
     completed: boolean;
   }[]>([]);
+  const [dashStats, setDashStats] = useState<{
+    streak: number;
+    lastStudyDate: string | null;
+    totalQuestions: number;
+    correctAnswers: number;
+    totalStudyMinutes: number;
+    tasksCompleted: number;
+    tasksTotal: number;
+    weeklyData: { date: string; minutes: number; questions: number }[];
+    accuracyRate: number;
+  } | null>(null);
+  const [weeklyData, setWeeklyData] = useState<{ date: string; minutes: number; questions: number }[]>([]);
 
   async function fetchTasks() {
     try {
@@ -101,30 +113,66 @@ function DashboardContent() {
     }
   }
 
-  useEffect(() => {
-    async function fetchDashboardData() {
-      if (!user) return;
+  async function fetchDashboardData() {
+    if (!user) return;
 
-      try {
-        setLoading(true);
-        const [masteryData] = await Promise.all([
-          api.getSubjectMastery(),
-        ]);
-        setMastery(masteryData || []);
-        await fetchTasks();
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
-      } finally {
-        setLoading(false);
+    try {
+      setLoading(true);
+      const [masteryData, overviewData, weekly] = await Promise.all([
+        api.getSubjectMastery(),
+        api.getProgressOverview().catch(() => null),
+        api.getWeeklyData().catch(() => null),
+      ]);
+      setMastery(masteryData || []);
+      if (overviewData) {
+        setDashStats({
+          streak: overviewData.streak || 1,
+          lastStudyDate: overviewData.last_study_date || null,
+          totalQuestions: overviewData.total_questions || 0,
+          correctAnswers: overviewData.correct_answers || 0,
+          totalStudyMinutes: overviewData.total_study_minutes || 0,
+          tasksCompleted: overviewData.tasks_completed || 0,
+          tasksTotal: overviewData.tasks_total || 0,
+          weeklyData: overviewData.weekly_data || [],
+          accuracyRate: overviewData.accuracy_rate || 0,
+        });
       }
+      if (weekly?.weekly_data) {
+        setWeeklyData(weekly.weekly_data);
+      }
+      await fetchTasks();
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     fetchDashboardData();
   }, [user]);
 
   useEffect(() => {
     const handleFocus = () => {
       fetchTasks();
+      api.getProgressOverview().then(overviewData => {
+        if (overviewData) {
+          setDashStats({
+            streak: overviewData.streak || 1,
+            lastStudyDate: overviewData.last_study_date || null,
+            totalQuestions: overviewData.total_questions || 0,
+            correctAnswers: overviewData.correct_answers || 0,
+            totalStudyMinutes: overviewData.total_study_minutes || 0,
+            tasksCompleted: overviewData.tasks_completed || 0,
+            tasksTotal: overviewData.tasks_total || 0,
+            weeklyData: overviewData.weekly_data || [],
+            accuracyRate: overviewData.accuracy_rate || 0,
+          });
+        }
+      }).catch(() => {});
+      api.getWeeklyData().then(weekly => {
+        if (weekly?.weekly_data) setWeeklyData(weekly.weekly_data);
+      }).catch(() => {});
     };
     const handleTaskCreated = (e: Event) => {
       const task = (e as CustomEvent).detail;
@@ -138,28 +186,46 @@ function DashboardContent() {
     };
     const handleTaskUpdated = (e: Event) => {
       const task = (e as CustomEvent).detail;
-      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...task } : t));
+      setTasks(prev => {
+        const updated = prev.map(t => t.id === task.id ? { ...t, ...task } : t);
+        // Update tasksCompleted count when task is toggled
+        const completed = updated.filter(t => {
+          const todayStr = new Date().toISOString().split('T')[0];
+          return t.due_date.split('T')[0] === todayStr && t.completed;
+        }).length;
+        const total = updated.filter(t => {
+          const todayStr = new Date().toISOString().split('T')[0];
+          return t.due_date.split('T')[0] === todayStr;
+        }).length;
+        setDashStats(prev => prev ? { ...prev, tasksCompleted: completed, tasksTotal: total } : prev);
+        return updated;
+      });
     };
     const handleTaskDeleted = (e: Event) => {
       const { id } = (e as CustomEvent).detail;
       setTasks(prev => prev.filter(t => t.id !== id));
+    };
+    const handleQuizCompleted = () => {
+      fetchDashboardData();
     };
 
     window.addEventListener('focus', handleFocus);
     window.addEventListener(TASK_EVENTS.CREATED, handleTaskCreated);
     window.addEventListener(TASK_EVENTS.UPDATED, handleTaskUpdated);
     window.addEventListener(TASK_EVENTS.DELETED, handleTaskDeleted);
-    const interval = setInterval(fetchTasks, 30000);
+    window.addEventListener(QUIZ_EVENTS.COMPLETED, handleQuizCompleted);
+    const interval = setInterval(fetchDashboardData, 60000);
     return () => {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener(TASK_EVENTS.CREATED, handleTaskCreated);
       window.removeEventListener(TASK_EVENTS.UPDATED, handleTaskUpdated);
       window.removeEventListener(TASK_EVENTS.DELETED, handleTaskDeleted);
+      window.removeEventListener(QUIZ_EVENTS.COMPLETED, handleQuizCompleted);
       clearInterval(interval);
     };
   }, []);
 
-  const userStats = user?.stats;
+  const userStats = dashStats;
 
   const totalStudyHours = userStats ? Math.floor(userStats.totalStudyMinutes / 60) : 0;
   const studyMinutes = userStats ? userStats.totalStudyMinutes % 60 : 0;
@@ -273,7 +339,7 @@ function DashboardContent() {
                           <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center`}>
                             <IconComponent className="w-4 h-4 text-white" />
                           </div>
-                          <span className="font-medium">{subject.subject_name}</span>
+                          <span className="font-medium">{subject.subject_name || subject.subject_id}</span>
                         </div>
                         <span className={cn(
                           subject.mastery_score >= 60 ? "text-emerald-400" : subject.mastery_score >= 40 ? "text-amber-400" : "text-slate"
@@ -307,7 +373,7 @@ function DashboardContent() {
                       <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
                         <Target className="w-4 h-4 text-red-400" />
                       </div>
-                      <span className="text-sm flex-1">{subject.subject_name}</span>
+                      <span className="text-sm flex-1">{subject.subject_name || subject.subject_id}</span>
                       <Link href="/practice">
                         <Button size="sm" variant="ghost" className="text-teal">
                           <Play className="w-4 h-4" />
@@ -377,10 +443,10 @@ function DashboardContent() {
 
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-6">Weekly Progress</h2>
-          {userStats?.weeklyData && userStats.weeklyData.length > 0 ? (
+          {weeklyData && weeklyData.length > 0 ? (
             <>
               <div className="space-y-4">
-                {userStats.weeklyData.slice(-7).map((day, i) => {
+                {weeklyData.slice(-7).map((day, i) => {
                   const dayName = new Date(day.date).toLocaleDateString("en-US", { weekday: "short" });
                   const percent = Math.min((day.minutes / 60) * 100, 100);
                   return (
@@ -401,13 +467,13 @@ function DashboardContent() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate">This Week</span>
                   <span className="font-bold text-teal">
-                    {userStats.weeklyData.reduce((sum, d) => sum + d.minutes, 0)} minutes
+                    {weeklyData.reduce((sum, d) => sum + d.minutes, 0)} minutes
                   </span>
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-sm text-slate">Questions</span>
                   <span className="font-bold">
-                    {userStats.weeklyData.reduce((sum, d) => sum + d.questions, 0)}
+                    {weeklyData.reduce((sum, d) => sum + d.questions, 0)}
                   </span>
                 </div>
               </div>
