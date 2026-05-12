@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, date
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -140,3 +140,69 @@ async def update_me(
     
     updated_user = await update_user(db, user, update_data)
     return updated_user
+
+
+DEMO_PASSWORD = "demo123"
+
+
+@router.post("/guest", response_model=Token)
+async def guest_login(
+    db: AsyncSession = Depends(get_db)
+):
+    guest_email = "demo@ledger.app"
+    
+    existing = await get_user_by_email(db, guest_email)
+    if existing:
+        user = existing
+    else:
+        weekly_data = [
+            {"date": (date.today() - timedelta(days=i)).isoformat(), "minutes": 0, "questions": 0}
+            for i in range(6, -1, -1)
+        ]
+        from app.models.user import User, UserStats, SubjectMastery
+        from app.services.auth_service import get_password_hash
+        import uuid
+        
+        user = User(
+            id=str(uuid.uuid4()),
+            email=guest_email,
+            password_hash=get_password_hash(DEMO_PASSWORD),
+            name="Demo User",
+            level="professional",
+            daily_hours=2,
+            avatar="DU",
+        )
+        db.add(user)
+        await db.flush()
+        
+        stats = UserStats(
+            user_id=user.id,
+            streak=3,
+            last_study_date=date.today(),
+            total_questions=47,
+            correct_answers=35,
+            total_study_minutes=420,
+            tasks_completed=12,
+            tasks_total=15,
+            weekly_data=weekly_data
+        )
+        db.add(stats)
+        
+        for subject_id in ["accounting", "assurance", "business-finance", "law", "taxation"]:
+            mastery = SubjectMastery(
+                user_id=user.id,
+                subject_id=subject_id,
+                mastery_score=65,
+                questions_attempted=10,
+                questions_correct=7
+            )
+            db.add(mastery)
+        
+        await db.commit()
+    
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}

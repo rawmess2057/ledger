@@ -22,7 +22,7 @@ class QuestionCreate(QuestionBase):
 
 class QuestionResponse(QuestionBase):
     id: str
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

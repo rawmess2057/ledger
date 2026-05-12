@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Sidebar, TopBar, MobileNav } from "@/components/Navigation";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
+import { TASK_EVENTS, emitTaskEvent } from "@/lib/taskEvents";
 import {
   TrendingUp,
   Flame,
@@ -91,18 +92,26 @@ function DashboardContent() {
     completed: boolean;
   }[]>([]);
 
+  async function fetchTasks() {
+    try {
+      const tasksData = await api.getTasks();
+      setTasks(tasksData.tasks || []);
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error);
+    }
+  }
+
   useEffect(() => {
     async function fetchDashboardData() {
       if (!user) return;
 
       try {
         setLoading(true);
-        const [masteryData, tasksData] = await Promise.all([
+        const [masteryData] = await Promise.all([
           api.getSubjectMastery(),
-          api.getTasks(),
         ]);
         setMastery(masteryData || []);
-        setTasks(tasksData.tasks || []);
+        await fetchTasks();
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -112,6 +121,43 @@ function DashboardContent() {
 
     fetchDashboardData();
   }, [user]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchTasks();
+    };
+    const handleTaskCreated = (e: Event) => {
+      const task = (e as CustomEvent).detail;
+      setTasks(prev => {
+        if (prev.find(t => t.id === task.id)) return prev;
+        const todayStr = new Date().toISOString().split('T')[0];
+        const taskDate = task.due_date?.split('T')[0];
+        if (taskDate === todayStr) return [...prev, task];
+        return prev;
+      });
+    };
+    const handleTaskUpdated = (e: Event) => {
+      const task = (e as CustomEvent).detail;
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...task } : t));
+    };
+    const handleTaskDeleted = (e: Event) => {
+      const { id } = (e as CustomEvent).detail;
+      setTasks(prev => prev.filter(t => t.id !== id));
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener(TASK_EVENTS.CREATED, handleTaskCreated);
+    window.addEventListener(TASK_EVENTS.UPDATED, handleTaskUpdated);
+    window.addEventListener(TASK_EVENTS.DELETED, handleTaskDeleted);
+    const interval = setInterval(fetchTasks, 30000);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener(TASK_EVENTS.CREATED, handleTaskCreated);
+      window.removeEventListener(TASK_EVENTS.UPDATED, handleTaskUpdated);
+      window.removeEventListener(TASK_EVENTS.DELETED, handleTaskDeleted);
+      clearInterval(interval);
+    };
+  }, []);
 
   const userStats = user?.stats;
 
@@ -131,7 +177,13 @@ function DashboardContent() {
     .sort((a, b) => a.mastery_score - b.mastery_score)
     .slice(0, 4);
 
-  const todayTasks = tasks.filter(task => !task.completed).slice(0, 4);
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  
+  const todayTasks = tasks.filter(task => {
+    const taskDate = task.due_date.split('T')[0];
+    return taskDate === todayStr && !task.completed;
+  }).slice(0, 4);
 
   if (loading && !mastery.length) {
     return (

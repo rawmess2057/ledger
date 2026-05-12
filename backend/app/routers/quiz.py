@@ -81,20 +81,20 @@ async def start_quiz(
     return QuizStartResponse(
         session_id=session.id,
         questions=[
-            QuestionResponse(
-                id=q.id,
-                type=q.type,
-                question=q.question,
-                options=q.options,
-                correct_answer=q.correct_answer,
-                explanation=q.explanation,
-                difficulty=q.difficulty,
-                topic=q.topic,
-                subtopic=q.subtopic,
-                subject=q.subject,
-                marks=q.marks,
-                created_at=q.created_at
-            ) for q in questions
+            {
+                "id": q.id,
+                "type": q.type,
+                "question": q.question,
+                "options": q.options,
+                "correct_answer": q.correct_answer,
+                "explanation": q.explanation,
+                "difficulty": q.difficulty,
+                "topic": q.topic,
+                "subtopic": q.subtopic,
+                "subject": q.subject,
+                "marks": q.marks,
+                "created_at": q.created_at,
+            } for q in questions
         ],
         started_at=session.started_at
     )

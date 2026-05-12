@@ -85,6 +85,14 @@ class ApiClient {
     return response.data;
   }
 
+  async guestLogin() {
+    const response = await this.client.post("/auth/guest");
+    if (response.data.access_token) {
+      this.setToken(response.data.access_token);
+    }
+    return response.data;
+  }
+
   async getMe() {
     this.loadToken();
     const response = await this.client.get("/auth/me");

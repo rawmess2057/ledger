@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
+import { emitTaskEvent } from "@/lib/taskEvents";
 import { cn } from "@/lib/utils";
 import {
   Calendar,
@@ -267,6 +268,7 @@ function PlannerContent() {
         due_date: newTask.due_date,
       });
       setTasks([...tasks, createdTask]);
+      emitTaskEvent('ledger:task:created', createdTask);
     } catch (error) {
       console.error("Failed to create task:", error);
       alert("Failed to add task. Please try again.");
@@ -279,6 +281,7 @@ function PlannerContent() {
       setTasks(tasks.map(task =>
         task.id === taskId ? { ...task, completed: updatedTask.completed } : task
       ));
+      emitTaskEvent('ledger:task:updated', updatedTask);
     } catch (error) {
       console.error("Failed to toggle task:", error);
     }
@@ -288,6 +291,7 @@ function PlannerContent() {
     try {
       await api.deleteTask(taskId);
       setTasks(tasks.filter(task => task.id !== taskId));
+      emitTaskEvent('ledger:task:deleted', { id: taskId });
     } catch (error) {
       console.error("Failed to delete task:", error);
     }

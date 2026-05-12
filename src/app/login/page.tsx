@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
@@ -15,37 +16,58 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle2,
+  User,
 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading } = useAuth();
+  const { login: authLogin, refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
+
+  const handleGuestLogin = async () => {
+    setError("");
+    setGuestLoading(true);
+    try {
+      await api.guestLogin();
+      await refreshUser();
+      router.push("/dashboard");
+    } catch {
+      setError("Guest login failed. Please try again.");
+    } finally {
+      setGuestLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSubmitting(true);
 
     if (!email) {
       setError("Please enter your email");
+      setSubmitting(false);
       return;
     }
     if (password.length < 6) {
       setError("Password must be at least 6 characters");
+      setSubmitting(false);
       return;
     }
 
-    const result = await login(email, password);
+    const result = await authLogin(email, password);
     if (result) {
-      setSuccess(true);
+      setSuccess("Login successful! Redirecting...");
       setTimeout(() => router.push("/dashboard"), 1000);
     } else {
       setError("Invalid email or password");
     }
+    setSubmitting(false);
   };
 
   return (
@@ -76,7 +98,7 @@ export default function LoginPage() {
           {success && (
             <div className="flex items-center gap-2 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl mb-6">
               <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              <span className="text-emerald-400 text-sm">Login successful! Redirecting...</span>
+              <span className="text-emerald-400 text-sm">{success}</span>
             </div>
           )}
 
@@ -128,8 +150,8 @@ export default function LoginPage() {
               <a href="#" className="text-teal hover:underline">Forgot password?</a>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading || success}>
-              {isLoading ? (
+            <Button type="submit" className="w-full" disabled={submitting || success !== ""}>
+              {submitting ? (
                 <span className="animate-pulse">Signing in...</span>
               ) : (
                 <>
@@ -148,10 +170,24 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-6 pt-6 border-t border-slate/10">
-            <p className="text-xs text-slate text-center mb-4">Demo credentials (any email + 6+ char password)</p>
-            <Button variant="secondary" className="w-full" onClick={() => { setEmail("demo@ledger.np"); setPassword("demo123"); }}>
-              Fill Demo Credentials
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={handleGuestLogin}
+              disabled={guestLoading}
+            >
+              {guestLoading ? (
+                <span className="animate-pulse">Entering as guest...</span>
+              ) : (
+                <>
+                  <User className="w-4 h-4" />
+                  Continue as Demo User
+                </>
+              )}
             </Button>
+            <p className="text-xs text-slate text-center mt-3">
+              No account needed — explore all features with sample data
+            </p>
           </div>
         </Card>
 
