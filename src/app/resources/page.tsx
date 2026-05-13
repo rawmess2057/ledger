@@ -98,6 +98,14 @@ const cap1Exams: CAPExam[] = [
     description: "CAP-I Level Examination with suggested answers",
     subjects: ["Accounting", "Business Mathematics", "Law"],
   },
+  {
+    id: "mercantile-laws-mcq",
+    name: "Mercantile Laws MCQ",
+    date: "2019",
+    pdfPath: "/doc/1573972756_Mercantile Laws MCQ.pdf",
+    description: "Mercantile Laws Multiple Choice Questions with answers",
+    subjects: ["Law"],
+  },
 ];
 
 interface CAP3Exam {

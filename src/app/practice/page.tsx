@@ -38,6 +38,7 @@ const subjectIcons: Record<string, any> = {
   "Audit and Assurance": ShieldCheck,
   "Corporate and Other Laws": FileQuestion,
   "Business Law": FileQuestion,
+  "cap-i": BookOpen,
 };
 
 const subjectColors: Record<string, string> = {
@@ -51,6 +52,7 @@ const subjectColors: Record<string, string> = {
   "Audit and Assurance": "from-blue-500 to-cyan-500",
   "Corporate and Other Laws": "from-amber-500 to-orange-500",
   "Business Law": "from-amber-500 to-orange-500",
+  "cap-i": "from-indigo-500 to-blue-500",
 };
 
 interface SubjectItem {

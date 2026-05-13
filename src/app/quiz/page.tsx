@@ -31,7 +31,7 @@ interface Question {
   type: string;
   question: string;
   options?: string[];
-  correctAnswer: string;
+  correct_answer: string;
   explanation?: string;
   difficulty: string;
   topic: string;
@@ -152,7 +152,7 @@ function QuizContent() {
     let correct = 0;
     session.questions.forEach((q) => {
       const state = questionStates[q.id];
-      if (state?.isAnswered && q.correctAnswer === state.selectedAnswer) {
+      if (state?.isAnswered && q.correct_answer === state.selectedAnswer) {
         correct++;
       }
     });
@@ -392,7 +392,7 @@ function QuizContent() {
               <div className="space-y-2 md:space-y-3">
                 {question.options.map((option, index) => {
                   const isSelected = currentState?.selectedAnswer === option;
-                  const isCorrect = option === question.correctAnswer;
+                  const isCorrect = option === question.correct_answer;
                   const showResult = currentState?.showExplanation;
                   
                   return (
@@ -401,27 +401,43 @@ function QuizContent() {
                       onClick={() => handleSelectAnswer(option)}
                       disabled={showResult}
                       className={cn(
-                        "w-full p-3 md:p-4 rounded-xl text-left transition-all border-2 min-h-[48px] md:min-h-0",
-                        isSelected && !showResult ? "border-teal bg-teal/10" :
-                        showResult && isCorrect ? "border-emerald-400 bg-emerald-500/10" :
-                        showResult && isSelected && !isCorrect ? "border-red-400 bg-red-500/10" :
-                        "border-slate/20 bg-navy hover:border-teal/50"
+                        "w-full p-3 md:p-4 rounded-xl text-left transition-all border-2 min-h-[48px] md:min-h-0 relative overflow-hidden",
+                        isSelected && !showResult && "border-teal bg-teal/10 ring-2 ring-teal/30",
+                        showResult && isCorrect && "border-emerald-400 bg-emerald-500/10 ring-2 ring-emerald-400/30",
+                        showResult && isSelected && !isCorrect && "border-red-400 bg-red-500/10 ring-2 ring-red-400/30",
+                        !isSelected && !showResult && "border-slate/20 bg-navy hover:border-teal/50 hover:bg-navy-light",
+                        showResult && !isSelected && !isCorrect && "border-slate/20 opacity-50"
                       )}
                     >
-                      <div className="flex items-center gap-2 md:gap-3">
+                      <div className="flex items-center gap-2 md:gap-3 relative z-10">
                         <span className={cn(
-                          "w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-medium shrink-0",
-                          isSelected && !showResult ? "bg-teal text-navy" :
-                          showResult && isCorrect ? "bg-emerald-400 text-navy" :
-                          showResult && isSelected ? "bg-red-400 text-white" :
+                          "w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-medium shrink-0 transition-all",
+                          isSelected && !showResult ? "bg-teal text-navy scale-110" :
+                          showResult && isCorrect ? "bg-emerald-400 text-navy scale-110" :
+                          showResult && isSelected && !isCorrect ? "bg-red-400 text-white scale-110" :
                           "bg-navy-light"
                         )}>
                           {String.fromCharCode(65 + index)}
                         </span>
-                        <span className="flex-1 text-sm md:text-base">{option}</span>
-                        {showResult && isCorrect && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-emerald-400 shrink-0" />}
-                        {showResult && isSelected && !isCorrect && <XCircle className="w-4 h-4 md:w-5 md:h-5 text-red-400 shrink-0" />}
+                        <span className={cn(
+                          "flex-1 text-sm md:text-base",
+                          showResult && isCorrect && "text-emerald-400 font-medium",
+                          showResult && isSelected && !isCorrect && "text-red-400"
+                        )}>{option}</span>
+                        {showResult && isCorrect && (
+                          <span className="shrink-0">
+                            <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-emerald-400 animate-in fade-in zoom-in duration-300" />
+                          </span>
+                        )}
+                        {showResult && isSelected && !isCorrect && (
+                          <span className="shrink-0">
+                            <XCircle className="w-5 h-5 md:w-6 md:h-6 text-red-400 animate-in fade-in zoom-in duration-300" />
+                          </span>
+                        )}
                       </div>
+                      {showResult && isCorrect && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent pointer-events-none" />
+                      )}
                     </button>
                   );
                 })}
@@ -440,7 +456,7 @@ function QuizContent() {
                 />
                 {currentState?.showExplanation && (
                   <p className="mt-3 md:mt-4 text-slate-light text-sm">
-                    Correct: <span className="text-teal font-mono">{question.correctAnswer}</span>
+                    Correct: <span className="text-teal font-mono">{question.correct_answer}</span>
                   </p>
                 )}
               </div>
@@ -459,7 +475,7 @@ function QuizContent() {
                 {currentState?.showExplanation && (
                   <div className="mt-3 md:mt-4 p-3 md:p-4 bg-navy-light rounded-xl">
                     <p className="text-xs md:text-sm text-slate-light">Expected:</p>
-                    <pre className="text-teal font-mono whitespace-pre-wrap mt-2 text-xs md:text-sm">{question.correctAnswer}</pre>
+                    <pre className="text-teal font-mono whitespace-pre-wrap mt-2 text-xs md:text-sm">{question.correct_answer}</pre>
                   </div>
                 )}
               </div>
@@ -467,10 +483,24 @@ function QuizContent() {
           </Card>
 
           {currentState?.showExplanation && (
-            <Card className="p-4 md:p-6 border-l-4 border-l-teal mb-4 md:mb-6">
+            <Card className={cn(
+              "p-4 md:p-6 border-l-4 mb-4 md:mb-6 transition-all animate-in slide-in-from-bottom-2 duration-300",
+              currentState.selectedAnswer === question.correct_answer 
+                ? "border-l-emerald-400 bg-emerald-500/5" 
+                : "border-l-red-400 bg-red-500/5"
+            )}>
               <div className="flex items-center gap-2 mb-2 md:mb-3">
-                <Lightbulb className="w-4 h-4 md:w-5 md:h-5 text-teal" />
-                <h3 className="font-semibold text-sm md:text-base">Explanation</h3>
+                {currentState.selectedAnswer === question.correct_answer ? (
+                  <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-emerald-400" />
+                ) : (
+                  <XCircle className="w-4 h-4 md:w-5 md:h-5 text-red-400" />
+                )}
+                <h3 className={cn(
+                  "font-semibold text-sm md:text-base",
+                  currentState.selectedAnswer === question.correct_answer ? "text-emerald-400" : "text-red-400"
+                )}>
+                  {currentState.selectedAnswer === question.correct_answer ? "Correct!" : "Incorrect"}
+                </h3>
               </div>
               <p className="text-slate-light text-xs md:text-sm mb-3 md:mb-4">{question.explanation}</p>
             </Card>
@@ -493,14 +523,17 @@ function QuizContent() {
                   onClick={handleSubmit} 
                   disabled={!currentState?.selectedAnswer}
                   size="sm"
-                  className="text-xs md:text-sm"
+                  className={cn(
+                    "text-xs md:text-sm transition-all",
+                    currentState?.selectedAnswer && "bg-teal hover:bg-teal/90 shadow-lg shadow-teal/20"
+                  )}
                 >
                   <Send className="w-3 h-3 md:w-4 md:h-4" />
-                  <span className="hidden sm:inline">Submit Answer</span>
-                  <span className="sm:hidden">Submit</span>
+                  <span className="hidden sm:inline">Check Answer</span>
+                  <span className="sm:hidden">Check</span>
                 </Button>
               ) : (
-                <Button onClick={handleNext} disabled={isSubmitting} size="sm" className="text-xs md:text-sm">
+                <Button onClick={handleNext} disabled={isSubmitting} size="sm" className="text-xs md:text-sm bg-emerald-500 hover:bg-emerald-600">
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
