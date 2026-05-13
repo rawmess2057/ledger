@@ -131,12 +131,20 @@ interface CAP2Exam {
 
 const cap2Exams: CAP2Exam[] = [
   {
+    id: "june-2022-group1",
+    name: "June 2022 - Group I",
+    date: "June 2022",
+    pdfPath: "/doc/1__CAP-II_SA_Group-I_June2022.pdf",
+    description: "CAP-II Level Examination Group I with suggested answers",
+    subjects: ["Advanced Accounting", "Audit and Assurance", "Corporate and Other Laws"],
+  },
+  {
     id: "dec-2022-group1",
     name: "December 2022 - Group I",
     date: "December 2022",
     pdfPath: "/doc/Suggested_CAP_II_Dec_2022_CAP_II_Group_I.pdf",
     description: "CAP-II Level Examination Group I with suggested answers",
-    subjects: ["Cost Accounting", "Business Finance", "Auditing"],
+    subjects: ["Advanced Accounting", "Audit and Assurance", "Corporate and Other Laws"],
   },
 ];
 

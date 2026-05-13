@@ -31,18 +31,26 @@ const subjectIcons: Record<string, any> = {
   accounting: Calculator,
   assurance: ShieldCheck,
   "business-finance": TrendingUp,
-  law: FileQuestion,
   taxation: Award,
-  "corporate-laws": FileQuestion,
-  "advanced-taxation": Calculator,
+  "Corporate Laws": FileQuestion,
+  "Advanced Taxation": Calculator,
+  "Advanced Accounting": Calculator,
+  "Audit and Assurance": ShieldCheck,
+  "Corporate and Other Laws": FileQuestion,
+  "Business Law": FileQuestion,
 };
 
 const subjectColors: Record<string, string> = {
   accounting: "from-teal-500 to-emerald-500",
   assurance: "from-blue-500 to-cyan-500",
   "business-finance": "from-violet-500 to-purple-500",
-  law: "from-amber-500 to-orange-500",
   taxation: "from-rose-500 to-pink-500",
+  "Corporate Laws": "from-amber-500 to-orange-500",
+  "Advanced Taxation": "from-rose-500 to-pink-500",
+  "Advanced Accounting": "from-teal-500 to-emerald-500",
+  "Audit and Assurance": "from-blue-500 to-cyan-500",
+  "Corporate and Other Laws": "from-amber-500 to-orange-500",
+  "Business Law": "from-amber-500 to-orange-500",
 };
 
 interface SubjectItem {
