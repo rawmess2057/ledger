@@ -104,86 +104,85 @@ function ProgressContent() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-8">
+    <div className="max-w-6xl mx-auto py-6 md:py-8">
       <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Progress" }]} />
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-3">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Your Progress</h1>
-          <p className="text-slate-light">
+          <h1 className="text-2xl md:text-3xl font-bold mb-1">Your Progress</h1>
+          <p className="text-slate-light text-sm">
             {stats?.totalQuestions === 0 
               ? "Start practicing to track your progress!" 
               : "Track your mastery and identify areas for improvement"}
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="secondary">
-            <Download className="w-4 h-4" />
-            Export Report
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" className="text-xs md:text-sm">
+            <Download className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="hidden sm:inline">Export Report</span>
           </Button>
-          <Button variant="ghost">
-            <Share2 className="w-4 h-4" />
-            Share
+          <Button variant="ghost" size="sm" className="text-xs md:text-sm">
+            <Share2 className="w-3 h-3 md:w-4 md:h-4" />
           </Button>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6 mb-8">
-        <Card className="p-6 text-center">
-          <ProgressRing progress={overallMastery} size={120} strokeWidth={8} />
-          <p className="text-slate-light mt-4">Overall Mastery</p>
-          <p className="text-sm text-slate">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+        <Card className="p-4 md:p-6 text-center">
+          <ProgressRing progress={overallMastery} size={100} sm_size={120} strokeWidth={8} />
+          <p className="text-slate-light mt-4 text-sm">Overall Mastery</p>
+          <p className="text-xs md:text-sm text-slate">
             {stats?.totalQuestions === 0 
               ? "No questions attempted yet" 
               : `Based on ${stats?.totalQuestions || 0} questions`}
           </p>
         </Card>
 
-        <Card className="p-6 text-center">
-          <div className="relative w-[120px] h-[120px] mx-auto mb-4">
+        <Card className="p-4 md:p-6 text-center">
+          <div className="relative w-[100px] sm:w-[120px] h-[100px] sm:h-[120px] mx-auto mb-4">
             <svg className="w-full h-full transform -rotate-90">
               <circle
-                cx="60"
-                cy="60"
-                r="52"
+                cx="50"
+                cy="50"
+                r="44"
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="none"
                 className="text-navy-light"
               />
               <circle
-                cx="60"
-                cy="60"
-                r="52"
+                cx="50"
+                cy="50"
+                r="44"
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="none"
-                strokeDasharray={`${Math.min(studyHours * 4, 327)} 327`}
+                strokeDasharray={`${Math.min(studyHours * 4, 277)} 277`}
                 className="text-teal transition-all duration-500"
                 strokeLinecap="round"
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl font-bold">{studyHours}h</span>
+              <span className="text-xl sm:text-2xl font-bold">{studyHours}h</span>
             </div>
           </div>
-          <p className="text-slate-light mt-4">Study Hours</p>
-          <p className="text-sm text-slate">
+          <p className="text-slate-light mt-4 text-sm">Study Hours</p>
+          <p className="text-xs md:text-sm text-slate">
             {stats?.totalStudyMinutes === 0 
               ? "Start studying to track time" 
               : `${stats?.totalStudyMinutes || 0} minutes total`}
           </p>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Study Streak</h3>
-            <div className="flex items-center gap-2 bg-amber-500/20 px-3 py-1 rounded-full">
-              <Flame className="w-4 h-4 text-amber-400" />
-              <span className="text-amber-400 font-bold">{stats?.streak || 0} days</span>
+        <Card className="p-4 md:p-6 sm:col-span-2 lg:col-span-1">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <h3 className="font-semibold text-sm md:text-base">Study Streak</h3>
+            <div className="flex items-center gap-2 bg-amber-500/20 px-2 md:px-3 py-1 rounded-full">
+              <Flame className="w-3 h-3 md:w-4 md:h-4 text-amber-400" />
+              <span className="text-amber-400 font-bold text-sm md:text-base">{stats?.streak || 0} days</span>
             </div>
           </div>
-          <div className="flex justify-between items-end h-20">
+          <div className="flex justify-between items-end h-16 md:h-20">
             {weekDays.map((day, i) => {
               const dayIndex = (i + 1) % 7;
               const weeklyData = stats?.weeklyData || [];
@@ -192,13 +191,13 @@ function ProgressContent() {
                 return date.getDay() === dayIndex;
               });
               const hasActivity = dayData && dayData.minutes > 0;
-              const height = hasActivity ? Math.min((dayData.minutes / 60) * 60 + 20, 60) : 8;
+              const height = hasActivity ? Math.min((dayData.minutes / 60) * 40 + 16, 60) : 8;
               
               return (
                 <div key={i} className="flex flex-col items-center gap-2">
                   <div 
                     className={cn(
-                      "w-8 rounded-lg transition-all",
+                      "w-6 md:w-8 rounded-lg transition-all",
                       hasActivity ? "bg-teal" : "bg-navy-light"
                     )} 
                     style={{ height: `${height}px` }} 
@@ -211,11 +210,11 @@ function ProgressContent() {
         </Card>
       </div>
 
-      <Tabs defaultValue="overview" className="mb-8">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="subjects">By Subject</TabsTrigger>
-          <TabsTrigger value="weak-areas">Weak Areas</TabsTrigger>
+      <Tabs defaultValue="overview" className="mb-6 md:mb-8">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="overview" className="text-xs md:text-sm px-3 md:px-4">Overview</TabsTrigger>
+          <TabsTrigger value="subjects" className="text-xs md:text-sm px-3 md:px-4">By Subject</TabsTrigger>
+          <TabsTrigger value="weak-areas" className="text-xs md:text-sm px-3 md:px-4">Weak Areas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -427,7 +426,7 @@ export default function ProgressPage() {
       <Sidebar />
       <TopBar />
 
-      <main className="ml-64 pt-16 pb-24 md:pb-8 px-6">
+      <main className="md:ml-64 pt-16 pb-24 md:pb-8 px-4 md:px-6">
         <ProtectedRoute>
           <ProgressContent />
         </ProtectedRoute>

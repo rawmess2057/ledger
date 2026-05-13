@@ -21,9 +21,10 @@ import {
   Home,
   Send,
   Loader2,
+  GraduationCap,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Question {
   id: string;
@@ -54,6 +55,7 @@ interface QuizSession {
 
 function QuizContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(300);
   const [quizComplete, setQuizComplete] = useState(false);
@@ -75,9 +77,20 @@ function QuizContent() {
     const initQuiz = async () => {
       try {
         setIsLoading(true);
+        const subject = searchParams.get("subject");
+        const topic = searchParams.get("topic");
+        const exam = searchParams.get("exam");
+        
+        const examTitles: Record<string, string> = {
+          "june-2019": "CA Membership June 2019",
+        };
+        
         const response = await api.startQuiz({
+          subject: subject || undefined,
+          topic: topic || undefined,
+          exam: exam || undefined,
           question_count: 5,
-          title: "Practice Quiz",
+          title: exam ? examTitles[exam] || "CA Membership Practice" : "Practice Quiz",
         });
         
         setSession(response);
@@ -106,7 +119,7 @@ function QuizContent() {
     };
 
     initQuiz();
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!session || quizComplete) return;
@@ -243,51 +256,51 @@ function QuizContent() {
     const percentage = quizResult.score_percentage;
 
     return (
-      <div className="min-h-screen bg-navy flex items-center justify-center p-6">
-        <Card className="max-w-2xl w-full p-8 text-center">
-          <div className={`w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center ${
+      <div className="min-h-screen bg-navy flex items-center justify-center p-4 md:p-6">
+        <Card className="max-w-2xl w-full p-6 md:p-8 text-center">
+          <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-4 md:mb-6 flex items-center justify-center ${
             percentage >= 70 ? "bg-emerald-500/20" : percentage >= 50 ? "bg-amber-500/20" : "bg-red-500/20"
           }`}>
             {percentage >= 70 ? (
-              <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+              <CheckCircle2 className="w-10 h-10 md:w-12 md:h-12 text-emerald-400" />
             ) : percentage >= 50 ? (
-              <Lightbulb className="w-12 h-12 text-amber-400" />
+              <Lightbulb className="w-10 h-10 md:w-12 md:h-12 text-amber-400" />
             ) : (
-              <XCircle className="w-12 h-12 text-red-400" />
+              <XCircle className="w-10 h-10 md:w-12 md:h-12 text-red-400" />
             )}
           </div>
 
-          <h1 className="text-3xl font-bold mb-2">Quiz Complete!</h1>
-          <p className="text-slate-light mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Quiz Complete!</h1>
+          <p className="text-slate-light text-sm md:text-base mb-6">
             {percentage >= 70 ? "Excellent work! Keep it up!" : percentage >= 50 ? "Good attempt. Room for improvement." : "Keep practicing! You'll get there."}
           </p>
 
-          <div className="text-6xl font-bold mb-6 gradient-text">{percentage}%</div>
+          <div className="text-5xl md:text-6xl font-bold mb-6 gradient-text">{percentage}%</div>
 
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="p-4 bg-navy rounded-xl">
-              <p className="text-2xl font-bold text-emerald-400">{quizResult.correct_answers}</p>
-              <p className="text-sm text-slate">Correct</p>
+          <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
+            <div className="p-3 md:p-4 bg-navy rounded-xl">
+              <p className="text-xl md:text-2xl font-bold text-emerald-400">{quizResult.correct_answers}</p>
+              <p className="text-xs md:text-sm text-slate">Correct</p>
             </div>
-            <div className="p-4 bg-navy rounded-xl">
-              <p className="text-2xl font-bold text-red-400">{quizResult.total_questions - quizResult.correct_answers}</p>
-              <p className="text-sm text-slate">Incorrect</p>
+            <div className="p-3 md:p-4 bg-navy rounded-xl">
+              <p className="text-xl md:text-2xl font-bold text-red-400">{quizResult.total_questions - quizResult.correct_answers}</p>
+              <p className="text-xs md:text-sm text-slate">Incorrect</p>
             </div>
-            <div className="p-4 bg-navy rounded-xl">
-              <p className="text-2xl font-bold text-amber-400">{formatTime(quizResult.time_taken_seconds)}</p>
-              <p className="text-sm text-slate">Time Taken</p>
+            <div className="p-3 md:p-4 bg-navy rounded-xl">
+              <p className="text-xl md:text-2xl font-bold text-amber-400">{formatTime(quizResult.time_taken_seconds)}</p>
+              <p className="text-xs md:text-sm text-slate">Time Taken</p>
             </div>
           </div>
 
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/practice">
-              <Button variant="secondary">
+              <Button variant="secondary" className="w-full">
                 <ArrowLeft className="w-4 h-4" />
                 Practice More
               </Button>
             </Link>
             <Link href="/dashboard">
-              <Button>
+              <Button className="w-full">
                 <Home className="w-4 h-4" />
                 Back to Dashboard
               </Button>
@@ -315,40 +328,40 @@ function QuizContent() {
     <div className="min-h-screen bg-navy">
       <TopBar />
 
-      <main className="pt-16 pb-24 md:pb-8 px-4">
-        <div className="max-w-4xl mx-auto py-8">
-          <div className="flex items-center justify-between mb-6">
+      <main className="pt-16 pb-28 md:pb-8 px-3 md:px-4">
+        <div className="max-w-4xl mx-auto py-4 md:py-8">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
             <Link href="/practice">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4" />
-                Exit Quiz
+              <Button variant="ghost" size="sm" className="text-xs md:text-sm">
+                <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
+                Exit
               </Button>
             </Link>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-navy-light px-4 py-2 rounded-xl">
-                <Clock className="w-5 h-5 text-slate" />
-                <span className={cn("font-mono font-bold", timeLeft < 60 && "text-red-400")}>
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="flex items-center gap-1 md:gap-2 bg-navy-light px-2 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl">
+                <Clock className="w-3 h-3 md:w-5 md:h-5 text-slate" />
+                <span className={cn("font-mono font-bold text-sm md:text-base", timeLeft < 60 && "text-red-400")}>
                   {formatTime(timeLeft)}
                 </span>
               </div>
-              <Button variant="outline" size="sm">
-                <Flag className="w-4 h-4" />
-                Mark for Review
+              <Button variant="outline" size="sm" className="hidden sm:flex">
+                <Flag className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="hidden md:inline">Mark for Review</span>
               </Button>
             </div>
           </div>
 
-          <Progress value={(currentIndex + 1) / totalQuestions * 100} className="mb-8" />
+          <Progress value={(currentIndex + 1) / totalQuestions * 100} className="mb-4 md:mb-6" />
 
-          <div className="flex items-center justify-between text-sm text-slate mb-4">
+          <div className="flex items-center justify-between text-xs md:text-sm text-slate mb-3 md:mb-4">
             <span>Question {currentIndex + 1} of {totalQuestions}</span>
-            <div className="flex gap-2">
+            <div className="flex gap-1 flex-wrap justify-end max-w-[160px] md:max-w-none">
               {session.questions.map((q, i) => (
                 <div
                   key={i}
                   className={cn(
-                    "w-6 h-6 rounded-lg flex items-center justify-center text-xs font-medium cursor-pointer transition-all",
-                    i === currentIndex ? "bg-teal text-navy" : 
+                    "w-6 h-6 md:w-7 md:h-7 rounded-lg flex items-center justify-center text-xs font-medium cursor-pointer transition-all",
+                    i === currentIndex ? "bg-teal text-navy" :
                     isQuestionAnswered(q.id) ? "bg-emerald-500/20 text-emerald-400" : "bg-navy-light text-slate hover:bg-slate/30"
                   )}
                   onClick={() => setCurrentIndex(i)}
@@ -359,23 +372,24 @@ function QuizContent() {
             </div>
           </div>
 
-          <Card className="p-8 mb-6">
-            <div className="flex items-center gap-2 mb-4">
+          <Card className="p-4 md:p-6 mb-4 md:mb-6">
+            <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-3 md:mb-4">
               <span className={cn(
-                "text-xs px-2 py-1 rounded-full capitalize",
+                "text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full capitalize",
                 question.difficulty === "easy" ? "bg-emerald-500/20 text-emerald-400" :
                 question.difficulty === "medium" ? "bg-amber-500/20 text-amber-400" : "bg-red-500/20 text-red-400"
               )}>
                 {question.difficulty}
               </span>
-              <span className="text-xs text-slate capitalize">{question.type.replace("-", " ")}</span>
-              <span className="text-xs text-slate">• {question.topic} • {question.marks} marks</span>
+              <span className="text-xs text-slate capitalize hidden sm:inline">{question.type.replace("-", " ")}</span>
+              <span className="text-xs text-slate">• {question.topic}</span>
+              <span className="text-xs text-slate">• {question.marks} marks</span>
             </div>
 
-            <h2 className="text-xl font-medium mb-6 whitespace-pre-wrap">{question.question}</h2>
+            <h2 className="text-base md:text-xl font-medium mb-4 md:mb-6 whitespace-pre-wrap">{question.question}</h2>
 
             {question.type === "mcq" && question.options && (
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 {question.options.map((option, index) => {
                   const isSelected = currentState?.selectedAnswer === option;
                   const isCorrect = option === question.correctAnswer;
@@ -387,16 +401,16 @@ function QuizContent() {
                       onClick={() => handleSelectAnswer(option)}
                       disabled={showResult}
                       className={cn(
-                        "w-full p-4 rounded-xl text-left transition-all border-2",
+                        "w-full p-3 md:p-4 rounded-xl text-left transition-all border-2 min-h-[48px] md:min-h-0",
                         isSelected && !showResult ? "border-teal bg-teal/10" :
                         showResult && isCorrect ? "border-emerald-400 bg-emerald-500/10" :
                         showResult && isSelected && !isCorrect ? "border-red-400 bg-red-500/10" :
                         "border-slate/20 bg-navy hover:border-teal/50"
                       )}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 md:gap-3">
                         <span className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                          "w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-medium shrink-0",
                           isSelected && !showResult ? "bg-teal text-navy" :
                           showResult && isCorrect ? "bg-emerald-400 text-navy" :
                           showResult && isSelected ? "bg-red-400 text-white" :
@@ -404,9 +418,9 @@ function QuizContent() {
                         )}>
                           {String.fromCharCode(65 + index)}
                         </span>
-                        <span className="flex-1">{option}</span>
-                        {showResult && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-                        {showResult && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-red-400" />}
+                        <span className="flex-1 text-sm md:text-base">{option}</span>
+                        {showResult && isCorrect && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-emerald-400 shrink-0" />}
+                        {showResult && isSelected && !isCorrect && <XCircle className="w-4 h-4 md:w-5 md:h-5 text-red-400 shrink-0" />}
                       </div>
                     </button>
                   );
@@ -422,11 +436,11 @@ function QuizContent() {
                   value={currentState?.selectedAnswer || ""}
                   onChange={(e) => handleTextInput(e.target.value)}
                   disabled={currentState?.showExplanation}
-                  className="w-full p-4 bg-navy border border-slate/20 rounded-xl text-lg font-mono focus:outline-none focus:border-teal disabled:opacity-60"
+                  className="w-full p-3 md:p-4 bg-navy border border-slate/20 rounded-xl text-sm md:text-lg font-mono focus:outline-none focus:border-teal disabled:opacity-60"
                 />
                 {currentState?.showExplanation && (
-                  <p className="mt-4 text-slate-light">
-                    Correct answer: <span className="text-teal font-mono">{question.correctAnswer}</span>
+                  <p className="mt-3 md:mt-4 text-slate-light text-sm">
+                    Correct: <span className="text-teal font-mono">{question.correctAnswer}</span>
                   </p>
                 )}
               </div>
@@ -435,18 +449,17 @@ function QuizContent() {
             {(question.type === "journal-entry" || question.type === "case-study") && (
               <div>
                 <textarea
-                  placeholder={`Enter your ${question.type === "journal-entry" ? "journal entry" : "answer"} here...`}
+                  placeholder={`Enter your ${question.type === "journal-entry" ? "journal entry" : "answer"}...`}
                   value={currentState?.selectedAnswer || ""}
                   onChange={(e) => handleTextInput(e.target.value)}
                   disabled={currentState?.showExplanation}
-                  rows={6}
-                  className="w-full p-4 bg-navy border border-slate/20 rounded-xl text-base focus:outline-none focus:border-teal disabled:opacity-60 resize-none font-mono"
+                  rows={4}
+                  className="w-full p-3 md:p-4 bg-navy border border-slate/20 rounded-xl text-sm md:text-base focus:outline-none focus:border-teal disabled:opacity-60 resize-none font-mono"
                 />
-                <p className="mt-2 text-sm text-slate">Write your answer clearly. Use proper formatting for journal entries.</p>
                 {currentState?.showExplanation && (
-                  <div className="mt-4 p-4 bg-navy-light rounded-xl">
-                    <p className="text-sm text-slate-light">Expected answer:</p>
-                    <pre className="text-teal font-mono whitespace-pre-wrap mt-2">{question.correctAnswer}</pre>
+                  <div className="mt-3 md:mt-4 p-3 md:p-4 bg-navy-light rounded-xl">
+                    <p className="text-xs md:text-sm text-slate-light">Expected:</p>
+                    <pre className="text-teal font-mono whitespace-pre-wrap mt-2 text-xs md:text-sm">{question.correctAnswer}</pre>
                   </div>
                 )}
               </div>
@@ -454,51 +467,49 @@ function QuizContent() {
           </Card>
 
           {currentState?.showExplanation && (
-            <Card className="p-6 border-l-4 border-l-teal mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Lightbulb className="w-5 h-5 text-teal" />
-                <h3 className="font-semibold">Explanation</h3>
+            <Card className="p-4 md:p-6 border-l-4 border-l-teal mb-4 md:mb-6">
+              <div className="flex items-center gap-2 mb-2 md:mb-3">
+                <Lightbulb className="w-4 h-4 md:w-5 md:h-5 text-teal" />
+                <h3 className="font-semibold text-sm md:text-base">Explanation</h3>
               </div>
-              <p className="text-slate-light mb-4">{question.explanation}</p>
-              <div className="p-3 bg-teal/10 rounded-xl">
-                <p className="text-sm text-teal">
-                  <span className="font-semibold">Tip:</span> This concept is frequently tested in ICAN exams. 
-                  Review the related standard/law for deeper understanding.
-                </p>
-              </div>
+              <p className="text-slate-light text-xs md:text-sm mb-3 md:mb-4">{question.explanation}</p>
             </Card>
           )}
 
           <div className="flex items-center justify-between">
             <Button 
               variant="ghost" 
+              size="sm"
               onClick={handlePrev} 
               disabled={currentIndex === 0}
             >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
+              <ChevronLeft className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">Previous</span>
             </Button>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2 md:gap-3">
               {!currentState?.showExplanation ? (
                 <Button 
                   onClick={handleSubmit} 
                   disabled={!currentState?.selectedAnswer}
+                  size="sm"
+                  className="text-xs md:text-sm"
                 >
-                  <Send className="w-4 h-4" />
-                  Submit Answer
+                  <Send className="w-3 h-3 md:w-4 md:h-4" />
+                  <span className="hidden sm:inline">Submit Answer</span>
+                  <span className="sm:hidden">Submit</span>
                 </Button>
               ) : (
-                <Button onClick={handleNext} disabled={isSubmitting}>
+                <Button onClick={handleNext} disabled={isSubmitting} size="sm" className="text-xs md:text-sm">
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Submitting...
+                      <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
+                      <span className="hidden sm:inline">Submitting...</span>
                     </>
                   ) : (
                     <>
-                      {currentIndex === totalQuestions - 1 ? "Finish Quiz" : "Next Question"}
-                      <ChevronRight className="w-4 h-4" />
+                      {currentIndex === totalQuestions - 1 ? "Finish" : "Next"}
+                      <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
                     </>
                   )}
                 </Button>

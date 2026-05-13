@@ -14,6 +14,7 @@ class QuestionBase(BaseModel):
     subtopic: Optional[str] = None
     subject: str
     marks: int = 2
+    exam: Optional[str] = None
 
 
 class QuestionCreate(QuestionBase):
@@ -44,6 +45,7 @@ class QuestionListResponse(BaseModel):
 class QuizStartRequest(BaseModel):
     subject: Optional[str] = None
     topic: Optional[str] = None
+    exam: Optional[str] = None
     question_count: int = Field(default=5, ge=1, le=50)
     is_mock: bool = False
     title: Optional[str] = None

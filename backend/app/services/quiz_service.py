@@ -14,6 +14,7 @@ async def get_random_questions(
     db: AsyncSession,
     subject: Optional[str] = None,
     topic: Optional[str] = None,
+    exam: Optional[str] = None,
     count: int = 5
 ) -> List[Question]:
     query = select(Question)
@@ -22,6 +23,8 @@ async def get_random_questions(
         query = query.where(Question.subject == subject)
     if topic:
         query = query.where(Question.topic == topic)
+    if exam:
+        query = query.where(Question.exam == exam)
     
     result = await db.execute(query)
     all_questions = result.scalars().all()
@@ -40,6 +43,7 @@ async def start_quiz_session(
         db,
         subject=request.subject,
         topic=request.topic,
+        exam=request.exam,
         count=request.question_count
     )
     

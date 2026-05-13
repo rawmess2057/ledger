@@ -25,6 +25,7 @@ class Question(Base):
     subtopic = Column(String(255), nullable=True)
     subject = Column(String(255), nullable=False)
     marks = Column(Integer, nullable=False, default=2)
+    exam = Column(String(100), nullable=True)  # e.g., "june-2019", "dec-2019"
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)

@@ -21,8 +21,6 @@ import {
   Search,
   ChevronRight,
   ChevronDown,
-  User,
-  LogOut as LogOutIcon,
   X,
 } from "lucide-react";
 
@@ -42,6 +40,7 @@ export function Sidebar() {
   const { user, isAuthenticated, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -53,13 +52,8 @@ export function Sidebar() {
     return isAuthenticated || pathname === "/login" || pathname === "/register";
   });
 
-  return (
-    <aside
-      className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-navy-light border-r border-slate/10 transition-all duration-300",
-        collapsed ? "w-20" : "w-64"
-      )}
-    >
+  const sidebarContent = (
+    <>
       <div className="flex h-16 items-center justify-between px-4 border-b border-slate/10">
         {!collapsed && (
           <Link href="/" className="flex items-center gap-2">
@@ -67,6 +61,13 @@ export function Sidebar() {
               <span className="text-navy font-bold text-lg">L</span>
             </div>
             <span className="text-xl font-bold text-white">Ledger</span>
+          </Link>
+        )}
+        {collapsed && (
+          <Link href="/" className="mx-auto">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal to-emerald-400 flex items-center justify-center">
+              <span className="text-navy font-bold text-lg">L</span>
+            </div>
           </Link>
         )}
         <button
@@ -77,13 +78,14 @@ export function Sidebar() {
         </button>
       </div>
 
-      <nav className="p-4 space-y-1">
+      <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-8rem)]">
         {filteredNavItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => setMobileOpen(false)}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
                 isActive
@@ -102,7 +104,7 @@ export function Sidebar() {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate/10">
           <div className={cn(collapsed ? "flex justify-center" : "")}>
             {!collapsed && (
-              <div 
+              <div
                 className="flex items-center gap-3 p-3 bg-navy rounded-xl cursor-pointer hover:bg-navy-light transition-colors"
                 onClick={() => setShowUserMenu(!showUserMenu)}
               >
@@ -131,7 +133,7 @@ export function Sidebar() {
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-navy-light text-slate hover:text-red-400 transition-colors"
               >
-                <LogOutIcon className="w-4 h-4" />
+                <LogOut className="w-4 h-4" />
                 <span className="text-sm">Logout</span>
               </button>
             </div>
@@ -145,11 +147,33 @@ export function Sidebar() {
           )}
         </div>
       )}
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-40 h-screen bg-navy-light border-r border-slate/10 transition-all duration-300 hidden md:block",
+          collapsed ? "w-20" : "w-64"
+        )}
+      >
+        {sidebarContent}
+      </aside>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-navy-light border-r border-slate/10 flex flex-col animate-in slide-in-from-left duration-200">
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
 
-export function TopBar() {
+export function TopBar({ onMenuOpen }: { onMenuOpen?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
@@ -167,11 +191,11 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-30 bg-navy/80 backdrop-blur-xl border-b border-slate/10">
-      <div className="flex h-16 items-center justify-between px-6">
-        <div className="flex items-center gap-4">
-          <button 
-            className="p-2 rounded-lg hover:bg-navy-light transition-colors md:hidden"
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
+      <div className="flex h-16 items-center justify-between px-4 md:px-6">
+        <div className="flex items-center gap-3 md:gap-4">
+          <button
+            className="p-2 rounded-lg hover:bg-navy-light transition-colors"
+            onClick={() => onMenuOpen ? onMenuOpen() : setShowMobileMenu(!showMobileMenu)}
           >
             <Menu className="w-5 h-5 text-slate" />
           </button>
@@ -180,12 +204,12 @@ export function TopBar() {
             <input
               type="text"
               placeholder="Search questions, topics..."
-              className="w-64 md:w-96 pl-10 pr-4 py-2 bg-navy-light border border-slate/20 rounded-xl text-sm text-white placeholder:text-slate focus:outline-none focus:border-teal transition-colors"
+              className="w-64 lg:w-96 pl-10 pr-4 py-2 bg-navy-light border border-slate/20 rounded-xl text-sm text-white placeholder:text-slate focus:outline-none focus:border-teal transition-colors"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <button className="relative p-2 rounded-lg hover:bg-navy-light transition-colors">
             <Bell className="w-5 h-5 text-slate" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-teal rounded-full"></span>
@@ -195,7 +219,7 @@ export function TopBar() {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 pl-3 border-l border-slate/20"
+                className="flex items-center gap-2 pl-2 md:pl-3 border-l border-slate/20"
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal to-emerald-400 flex items-center justify-center">
                   <span className="text-navy font-bold text-sm">{user?.avatar || "U"}</span>
@@ -208,7 +232,7 @@ export function TopBar() {
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-navy-light border border-slate/20 rounded-xl shadow-xl overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-navy-light border border-slate/20 rounded-xl shadow-xl overflow-hidden z-50">
                   <div className="p-3 border-b border-slate/10">
                     <p className="text-sm font-medium">{user?.name}</p>
                     <p className="text-xs text-slate">{user?.email}</p>
@@ -225,7 +249,7 @@ export function TopBar() {
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-navy text-slate hover:text-red-400 transition-colors"
                     >
-                      <LogOutIcon className="w-4 h-4" />
+                      <LogOut className="w-4 h-4" />
                       <span className="text-sm">Logout</span>
                     </button>
                   </div>
@@ -233,9 +257,14 @@ export function TopBar() {
               )}
             </div>
           ) : (
-            <Link href="/login">
-              <Button size="sm">Sign In</Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/login" className="hidden sm:block">
+                <Button size="sm" variant="ghost">Sign In</Button>
+              </Link>
+              <Link href="/register">
+                <Button size="sm">Get Started</Button>
+              </Link>
+            </div>
           )}
         </div>
       </div>

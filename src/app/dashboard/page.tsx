@@ -260,36 +260,36 @@ function DashboardContent() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-6xl mx-auto py-6 md:py-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-3">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.name?.split(" ")[0] || "Student"}! 👋</h1>
-          <p className="text-slate-light">
+          <h1 className="text-2xl md:text-3xl font-bold mb-1">Welcome back, {user?.name?.split(" ")[0] || "Student"}!</h1>
+          <p className="text-slate-light text-sm md:text-base">
             {userStats?.totalQuestions === 0
               ? "Start your first quiz to begin tracking progress!"
               : "Ready to master the ledger today?"}
           </p>
         </div>
         {userStats && userStats.streak > 0 && (
-          <div className="flex items-center gap-2 bg-amber-500/20 px-4 py-2 rounded-full">
+          <div className="flex items-center gap-2 bg-amber-500/20 px-3 md:px-4 py-2 rounded-full shrink-0">
             <Flame className="w-5 h-5 text-amber-400" />
-            <span className="text-amber-400 font-bold">{userStats.streak} Day Streak</span>
+            <span className="text-amber-400 font-bold text-sm md:text-base">{userStats.streak} Day Streak</span>
           </div>
         )}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6 mb-8">
-        <Card className="lg:col-span-1 p-6 flex flex-col items-center justify-center">
-          <ProgressRing progress={overallMastery} size={140} strokeWidth={10} />
-          <p className="text-center mt-4 text-slate-light">Overall Readiness</p>
-          <p className="text-sm text-slate">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+        <Card className="sm:col-span-2 lg:col-span-1 p-4 md:p-6 flex flex-col items-center justify-center">
+          <ProgressRing progress={overallMastery} size={100} sm_size={140} strokeWidth={8} />
+          <p className="text-center mt-4 text-slate-light text-sm">Overall Readiness</p>
+          <p className="text-xs md:text-sm text-slate">
             {userStats?.totalQuestions === 0
               ? "Complete quizzes to see your score"
               : `Based on ${userStats?.totalQuestions || 0} questions`}
           </p>
         </Card>
 
-        <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+        <div className="sm:col-span-2 lg:col-span-3 grid grid-cols-2 gap-4 md:gap-4">
           <StatCard
             icon={BookOpen}
             label="Questions Today"
@@ -318,28 +318,28 @@ function DashboardContent() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
         <div className="lg:col-span-2">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">Subject Mastery</h2>
-              <Link href="/progress" className="text-sm text-teal hover:underline flex items-center gap-1">
-                View All <ChevronRight className="w-4 h-4" />
+          <Card className="p-4 md:p-6">
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+              <h2 className="text-lg md:text-xl font-semibold">Subject Mastery</h2>
+              <Link href="/progress" className="text-xs md:text-sm text-teal hover:underline flex items-center gap-1">
+                View All <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
               </Link>
             </div>
             {mastery.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {mastery.map((subject) => {
                   const IconComponent = subjectIcons[subject.subject_id] || BookOpen;
                   const color = subjectColors[subject.subject_id] || "from-teal-500 to-emerald-500";
                   return (
                     <div key={subject.subject_id} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center justify-between text-xs md:text-sm">
                         <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center`}>
-                            <IconComponent className="w-4 h-4 text-white" />
+                          <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center`}>
+                            <IconComponent className="w-3 h-3 md:w-4 md:h-4 text-white" />
                           </div>
-                          <span className="font-medium">{subject.subject_name || subject.subject_id}</span>
+                          <span className="font-medium text-sm md:text-base">{subject.subject_name || subject.subject_id}</span>
                         </div>
                         <span className={cn(
                           subject.mastery_score >= 60 ? "text-emerald-400" : subject.mastery_score >= 40 ? "text-amber-400" : "text-slate"
@@ -353,29 +353,29 @@ function DashboardContent() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-8 text-slate">
-                <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <div className="text-center py-6 md:py-8 text-slate">
+                <BookOpen className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 md:mb-4 opacity-50" />
                 <p>No subject data yet</p>
-                <p className="text-sm">Complete quizzes to see your subject mastery</p>
+                <p className="text-xs md:text-sm">Complete quizzes to see your subject mastery</p>
               </div>
             )}
           </Card>
         </div>
 
         <div>
-          <Card className="p-6 h-full">
-            <h2 className="text-xl font-semibold mb-4">Recommended Practice</h2>
+          <Card className="p-4 md:p-6 h-full">
+            <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Recommended Practice</h2>
             {weakSubjects.length > 0 ? (
               <>
-                <div className="space-y-3 mb-6">
+                <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
                   {weakSubjects.map((subject) => (
-                    <div key={subject.subject_id} className="flex items-center gap-3 p-3 bg-navy rounded-xl">
-                      <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-                        <Target className="w-4 h-4 text-red-400" />
+                    <div key={subject.subject_id} className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-navy rounded-xl">
+                      <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
+                        <Target className="w-3 h-3 md:w-4 md:h-4 text-red-400" />
                       </div>
-                      <span className="text-sm flex-1">{subject.subject_name || subject.subject_id}</span>
+                      <span className="text-xs md:text-sm flex-1">{subject.subject_name || subject.subject_id}</span>
                       <Link href="/practice">
-                        <Button size="sm" variant="ghost" className="text-teal">
+                        <Button size="sm" variant="ghost" className="text-teal p-2">
                           <Play className="w-4 h-4" />
                         </Button>
                       </Link>
@@ -384,8 +384,8 @@ function DashboardContent() {
                 </div>
               </>
             ) : (
-              <div className="text-center py-4 text-slate mb-6">
-                <p className="text-sm">
+              <div className="text-center py-4 md:py-6 text-slate mb-4 md:mb-6">
+                <p className="text-xs md:text-sm">
                   {userStats?.totalQuestions === 0
                     ? "Start practicing to see recommendations"
                     : "Great job! No weak areas identified"}
@@ -393,96 +393,96 @@ function DashboardContent() {
               </div>
             )}
             <Link href="/quiz">
-              <Button className="w-full">
+              <Button className="w-full text-sm md:text-base">
                 Start Practice Session
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
               </Button>
             </Link>
           </Card>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">Today&apos;s Study Plan</h2>
-            <Link href="/planner" className="text-sm text-teal hover:underline flex items-center gap-1">
-              View Calendar <ChevronRight className="w-4 h-4" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+        <Card className="p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h2 className="text-base md:text-xl font-semibold">Today&apos;s Study Plan</h2>
+            <Link href="/planner" className="text-xs md:text-sm text-teal hover:underline flex items-center gap-1">
+              View Calendar <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
             </Link>
           </div>
           {todayTasks.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2 md:space-y-3">
               {todayTasks.map((task) => (
                 <div
                   key={task.id}
-                  className={`flex items-center gap-3 p-4 rounded-xl ${task.completed ? "bg-emerald-500/10" : "bg-navy"}`}
+                  className={`flex items-start sm:items-center gap-2 md:gap-3 p-3 md:p-4 rounded-xl ${task.completed ? "bg-emerald-500/10" : "bg-navy"}`}
                 >
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${task.completed ? "bg-emerald-500" : "border-2 border-slate"}`}>
-                    {task.completed && <CheckCircle2 className="w-4 h-4 text-white" />}
+                  <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center shrink-0 ${task.completed ? "bg-emerald-500" : "border-2 border-slate"}`}>
+                    {task.completed && <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-white" />}
                   </div>
-                  <div className="flex-1">
-                    <p className={`font-medium ${task.completed ? "line-through text-slate" : ""}`}>{task.title}</p>
-                    <p className="text-xs text-slate">{task.subject} • Due {new Date(task.due_date).toLocaleDateString()}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-medium text-sm md:text-base ${task.completed ? "line-through text-slate" : ""}`}>{task.title}</p>
+                    <p className="text-xs text-slate hidden sm:block">{task.subject} • Due {new Date(task.due_date).toLocaleDateString()}</p>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${task.priority === "high" ? "bg-red-500/20 text-red-400" : "bg-slate/20 text-slate"}`}>
+                  <span className={`text-xs px-2 py-0.5 md:py-1 rounded-full shrink-0 ${task.priority === "high" ? "bg-red-500/20 text-red-400" : "bg-slate/20 text-slate"}`}>
                     {task.priority}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-slate">
-              <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No tasks for today</p>
-              <Link href="/planner" className="text-sm text-teal hover:underline">
+            <div className="text-center py-6 md:py-8 text-slate">
+              <Calendar className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 md:mb-4 opacity-50" />
+              <p className="text-sm">No tasks for today</p>
+              <Link href="/planner" className="text-xs md:text-sm text-teal hover:underline">
                 Create a study plan
               </Link>
             </div>
           )}
         </Card>
 
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-6">Weekly Progress</h2>
+        <Card className="p-4 md:p-6">
+          <h2 className="text-base md:text-xl font-semibold mb-4 md:mb-6">Weekly Progress</h2>
           {weeklyData && weeklyData.length > 0 ? (
             <>
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {weeklyData.slice(-7).map((day, i) => {
                   const dayName = new Date(day.date).toLocaleDateString("en-US", { weekday: "short" });
                   const percent = Math.min((day.minutes / 60) * 100, 100);
                   return (
-                    <div key={i} className="flex items-center gap-4">
-                      <span className="text-sm text-slate w-8">{dayName}</span>
-                      <div className="flex-1 h-6 bg-navy rounded-lg overflow-hidden">
+                    <div key={i} className="flex items-center gap-2 md:gap-4">
+                      <span className="text-xs md:text-sm text-slate w-6 md:w-8">{dayName}</span>
+                      <div className="flex-1 h-4 md:h-6 bg-navy rounded-lg overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-teal to-emerald-400 transition-all duration-500"
                           style={{ width: `${percent}%` }}
                         />
                       </div>
-                      <span className="text-sm text-teal w-12 text-right">{day.minutes}m</span>
+                      <span className="text-xs md:text-sm text-teal w-10 md:w-12 text-right">{day.minutes}m</span>
                     </div>
                   );
                 })}
               </div>
-              <div className="mt-6 p-4 bg-navy rounded-xl">
+              <div className="mt-4 md:mt-6 p-3 md:p-4 bg-navy rounded-xl">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate">This Week</span>
-                  <span className="font-bold text-teal">
+                  <span className="text-xs md:text-sm text-slate">This Week</span>
+                  <span className="font-bold text-teal text-sm md:text-base">
                     {weeklyData.reduce((sum, d) => sum + d.minutes, 0)} minutes
                   </span>
                 </div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-sm text-slate">Questions</span>
-                  <span className="font-bold">
+                <div className="flex items-center justify-between mt-1 md:mt-2">
+                  <span className="text-xs md:text-sm text-slate">Questions</span>
+                  <span className="font-bold text-sm md:text-base">
                     {weeklyData.reduce((sum, d) => sum + d.questions, 0)}
                   </span>
                 </div>
               </div>
             </>
           ) : (
-            <div className="text-center py-8 text-slate">
-              <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No weekly data yet</p>
-              <p className="text-sm">Complete quizzes to track your weekly progress</p>
+            <div className="text-center py-6 md:py-8 text-slate">
+              <BookOpen className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 md:mb-4 opacity-50" />
+              <p className="text-sm">No weekly data yet</p>
+              <p className="text-xs md:text-sm">Complete quizzes to track your weekly progress</p>
             </div>
           )}
         </Card>
@@ -492,12 +492,13 @@ function DashboardContent() {
 }
 
 export default function DashboardPage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <div className="min-h-screen bg-navy">
       <Sidebar />
-      <TopBar />
+      <TopBar onMenuOpen={() => setSidebarOpen(true)} />
 
-      <main className="ml-64 pt-16 pb-24 md:pb-8 px-6">
+      <main className="md:ml-64 pt-16 pb-24 md:pb-8 px-4 md:px-6">
         <ProtectedRoute>
           <DashboardContent />
         </ProtectedRoute>

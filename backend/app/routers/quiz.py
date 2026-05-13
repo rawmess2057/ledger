@@ -33,6 +33,7 @@ async def get_questions(
     subject: Optional[str] = None,
     topic: Optional[str] = None,
     difficulty: Optional[str] = None,
+    exam: Optional[str] = None,
     limit: int = 50,
     db: AsyncSession = Depends(get_db)
 ):
@@ -44,6 +45,8 @@ async def get_questions(
         query = query.where(Question.topic == topic)
     if difficulty:
         query = query.where(Question.difficulty == difficulty)
+    if exam:
+        query = query.where(Question.exam == exam)
     
     query = query.limit(limit)
     result = await db.execute(query)

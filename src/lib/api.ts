@@ -120,6 +120,7 @@ class ApiClient {
     subject?: string;
     topic?: string;
     difficulty?: string;
+    exam?: string;
     limit?: number;
   }) {
     const response = await this.client.get("/quiz/questions", { params });
@@ -129,6 +130,7 @@ class ApiClient {
   async startQuiz(data: {
     subject?: string;
     topic?: string;
+    exam?: string;
     question_count?: number;
     is_mock?: boolean;
     title?: string;

@@ -99,9 +99,9 @@ function AddTaskModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <Card className="relative w-full max-w-md p-6 z-10">
+      <Card className="relative w-full max-w-md sm:max-w-lg p-4 sm:p-6 z-10 rounded-b-none sm:rounded-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-semibold">Add New Task</h3>
           <button onClick={onClose} className="p-2 hover:bg-navy rounded-lg">
@@ -310,51 +310,51 @@ function PlannerContent() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-8">
+    <div className="max-w-6xl mx-auto py-6 md:py-8">
       <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Study Planner" }]} />
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-3">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Study Planner</h1>
-          <p className="text-slate-light">Plan your studies and stay on track</p>
+          <h1 className="text-2xl md:text-3xl font-bold mb-1">Study Planner</h1>
+          <p className="text-slate-light text-sm">Plan your studies and stay on track</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)}>
-          <Plus className="w-4 h-4" />
+        <Button size="sm" onClick={() => setShowAddModal(true)} className="w-full sm:w-auto">
+          <Plus className="w-3 h-3 md:w-4 md:h-4" />
           Add Task
         </Button>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4 md:gap-6">
         <div className="lg:col-span-2">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">
+          <Card className="p-3 md:p-6">
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+              <h2 className="text-base md:text-xl font-semibold">
                 {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
               </h2>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={() => navigateMonth(-1)}>
+              <div className="flex gap-1 md:gap-2">
+                <Button variant="ghost" size="sm" onClick={() => navigateMonth(-1)} className="p-1 md:p-2">
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())}>
+                <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())} className="text-xs md:text-sm px-2">
                   Today
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => navigateMonth(1)}>
+                <Button variant="ghost" size="sm" onClick={() => navigateMonth(1)} className="p-1 md:p-2">
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-2 mb-4">
+            <div className="grid grid-cols-7 gap-1 md:gap-2 mb-2 md:mb-4">
               {weekDays.map((day) => (
-                <div key={day} className="text-center text-sm text-slate font-medium py-2">
+                <div key={day} className="text-center text-xs md:text-sm text-slate font-medium py-1 md:py-2">
                   {day}
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1 md:gap-2">
               {[...Array(firstDayOfMonth)].map((_, i) => (
-                <div key={`empty-${i}`} className="h-20 bg-navy rounded-xl"></div>
+                <div key={`empty-${i}`} className="h-12 md:h-20 bg-navy rounded-xl"></div>
               ))}
               {[...Array(daysInMonth)].map((_, i) => {
                 const day = i + 1;
@@ -367,24 +367,24 @@ function PlannerContent() {
                     key={day}
                     onClick={() => setSelectedDate(new Date(currentYear, currentMonth, day))}
                     className={cn(
-                      "h-20 p-2 rounded-xl transition-all",
+                      "h-12 md:h-20 p-1 md:p-2 rounded-xl transition-all text-xs md:text-sm",
                       isSelected ? "bg-teal/20 border border-teal" : "bg-navy hover:bg-navy-light",
                       isToday && !isSelected && "ring-2 ring-amber-500"
                     )}
                   >
                     <span className={cn(
-                      "text-sm font-medium",
+                      "font-medium block",
                       isSelected ? "text-teal" : "text-white"
                     )}>
                       {day}
                     </span>
                     {dayTasks.length > 0 && (
-                      <div className="flex gap-1 mt-1 flex-wrap">
-                        {dayTasks.slice(0, 3).map((task, j) => (
+                      <div className="flex gap-1 mt-1 flex-wrap justify-center">
+                        {dayTasks.slice(0, 2).map((task, j) => (
                           <div
                             key={j}
                             className={cn(
-                              "w-2 h-2 rounded-full",
+                              "w-1.5 h-1.5 md:w-2 md:h-2 rounded-full",
                               task.completed ? "bg-emerald-400" : "bg-amber-400"
                             )}
                           />
@@ -398,59 +398,59 @@ function PlannerContent() {
           </Card>
         </div>
 
-        <div className="space-y-6">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">
-                {selectedDate.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "short" })}
+        <div className="space-y-4 md:space-y-6">
+          <Card className="p-3 md:p-6">
+            <div className="flex items-center justify-between mb-3 md:mb-4">
+              <h3 className="font-semibold text-sm md:text-base">
+                {selectedDate.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" })}
               </h3>
-              <Button size="sm" variant="ghost" onClick={() => setShowAddModal(true)}>
-                <Plus className="w-4 h-4" />
+              <Button size="sm" variant="ghost" onClick={() => setShowAddModal(true)} className="p-1 md:p-2">
+                <Plus className="w-3 h-3 md:w-4 md:h-4" />
               </Button>
             </div>
 
             {selectedDateTasks.length === 0 ? (
-              <div className="text-center py-8">
-                <Calendar className="w-12 h-12 text-slate mx-auto mb-3" />
-                <p className="text-slate text-sm">No tasks scheduled</p>
+              <div className="text-center py-6 md:py-8">
+                <Calendar className="w-10 h-10 md:w-12 md:h-12 text-slate mx-auto mb-3" />
+                <p className="text-slate text-xs md:text-sm">No tasks scheduled</p>
                 <Button variant="secondary" size="sm" className="mt-3" onClick={() => setShowAddModal(true)}>
                   Add Task
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3 max-h-[40vh] overflow-y-auto">
                 {selectedDateTasks.map((task) => (
                   <div
                     key={task.id}
                     className={cn(
-                      "p-4 rounded-xl border transition-colors",
+                      "p-2 md:p-4 rounded-xl border transition-colors",
                       task.completed ? "bg-emerald-500/10 border-emerald-500/20" : "bg-navy border-slate/20"
                     )}
                   >
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-start justify-between mb-1 md:mb-2">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleToggleTask(task.id)}
                           className="flex-shrink-0"
                         >
                           {task.completed ? (
-                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                            <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-emerald-400" />
                           ) : (
-                            <Circle className="w-5 h-5 text-slate" />
+                            <Circle className="w-4 h-4 md:w-5 md:h-5 text-slate" />
                           )}
                         </button>
-                        <span className={cn("font-medium", task.completed && "line-through text-slate")}>
+                        <span className={cn("font-medium text-xs md:text-sm", task.completed && "line-through text-slate")}>
                           {task.title}
                         </span>
                       </div>
-                      <button onClick={() => handleDeleteTask(task.id)} className="p-1 hover:bg-navy-light rounded">
-                        <Trash2 className="w-4 h-4 text-red-400" />
+                      <button onClick={() => handleDeleteTask(task.id)} className="p-1 hover:bg-navy-light rounded shrink-0">
+                        <Trash2 className="w-3 h-3 md:w-4 md:h-4 text-red-400" />
                       </button>
                     </div>
-                    <p className="text-xs text-slate ml-7 capitalize">{task.subject.replace("-", " & ")}</p>
-                    <div className="flex items-center gap-3 mt-2 ml-7">
+                    <p className="text-xs text-slate ml-6 md:ml-7 capitalize hidden sm:block">{task.subject.replace("-", " & ")}</p>
+                    <div className="flex items-center gap-2 md:gap-3 mt-1 md:mt-2 ml-6 md:ml-7">
                       <span className={cn(
-                        "text-xs px-2 py-0.5 rounded-full capitalize",
+                        "text-xs px-1.5 md:px-2 py-0.5 rounded-full capitalize",
                         task.priority === "high" ? "bg-red-500/20 text-red-400" :
                         task.priority === "medium" ? "bg-amber-500/20 text-amber-400" : "bg-slate/20 text-slate"
                       )}>
@@ -458,7 +458,7 @@ function PlannerContent() {
                       </span>
                       <span className="text-xs text-slate flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {task.duration} min
+                        {task.duration}m
                       </span>
                     </div>
                   </div>
@@ -467,44 +467,44 @@ function PlannerContent() {
             )}
           </Card>
 
-          <Card className="p-6">
-            <h3 className="font-semibold mb-4">Weekly Summary</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-navy rounded-xl">
+          <Card className="p-3 md:p-6">
+            <h3 className="font-semibold mb-3 md:mb-4 text-sm md:text-base">Weekly Summary</h3>
+            <div className="space-y-2 md:space-y-3">
+              <div className="flex items-center justify-between p-2 md:p-3 bg-navy rounded-xl">
                 <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-emerald-400" />
-                  <span className="text-sm">Completed</span>
+                  <Target className="w-4 h-4 md:w-5 md:h-5 text-emerald-400" />
+                  <span className="text-xs md:text-sm">Completed</span>
                 </div>
-                <span className="font-bold text-emerald-400">{completedTasks}</span>
+                <span className="font-bold text-emerald-400 text-sm md:text-base">{completedTasks}</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-navy rounded-xl">
+              <div className="flex items-center justify-between p-2 md:p-3 bg-navy rounded-xl">
                 <div className="flex items-center gap-2">
-                  <Circle className="w-5 h-5 text-amber-400" />
-                  <span className="text-sm">Pending</span>
+                  <Circle className="w-4 h-4 md:w-5 md:h-5 text-amber-400" />
+                  <span className="text-xs md:text-sm">Pending</span>
                 </div>
-                <span className="font-bold text-amber-400">{pendingTasks}</span>
+                <span className="font-bold text-amber-400 text-sm md:text-base">{pendingTasks}</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-navy rounded-xl">
+              <div className="flex items-center justify-between p-2 md:p-3 bg-navy rounded-xl">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-teal" />
-                  <span className="text-sm">Study Hours</span>
+                  <Clock className="w-4 h-4 md:w-5 md:h-5 text-teal" />
+                  <span className="text-xs md:text-sm">Study Hours</span>
                 </div>
-                <span className="font-bold text-teal">{totalStudyHours.toFixed(1)}h</span>
+                <span className="font-bold text-teal text-sm md:text-base">{totalStudyHours.toFixed(1)}h</span>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 gradient-primary border-0">
-            <div className="flex items-center gap-3 mb-3">
-              <Sparkles className="w-6 h-6" />
-              <h3 className="font-semibold">AI Suggestion</h3>
+          <Card className="p-3 md:p-6 gradient-primary border-0">
+            <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
+              <Sparkles className="w-5 h-5 md:w-6 md:h-6" />
+              <h3 className="font-semibold text-sm md:text-base">AI Suggestion</h3>
             </div>
-            <p className="text-sm text-slate-light mb-4">
+            <p className="text-xs md:text-sm text-slate-light mb-3 md:mb-4">
               Based on your weak areas, focus on Journal Entries and VAT calculation today.
             </p>
             <Button size="sm" variant="secondary" className="w-full" onClick={() => window.location.href = "/quiz"}>
-              <Play className="w-4 h-4" />
-              Start Suggested Practice
+              <Play className="w-3 h-3 md:w-4 md:h-4" />
+              Start Practice
             </Button>
           </Card>
         </div>
@@ -526,7 +526,7 @@ export default function PlannerPage() {
       <Sidebar />
       <TopBar />
 
-      <main className="ml-64 pt-16 pb-24 md:pb-8 px-6">
+      <main className="md:ml-64 pt-16 pb-24 md:pb-8 px-4 md:px-6">
         <ProtectedRoute>
           <PlannerContent />
         </ProtectedRoute>
