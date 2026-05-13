@@ -206,6 +206,34 @@ class ApiClient {
     await this.client.delete(`/tasks/${taskId}`);
   }
 
+  // Mock Test endpoints
+  async getMockTests(level = "CAP-II", subject?: string) {
+    const params: any = { level };
+    if (subject) params.subject = subject;
+    const response = await this.client.get("/mock-tests", { params });
+    return response.data;
+  }
+
+  async getMockTest(testId: string) {
+    const response = await this.client.get(`/mock-tests/${testId}`);
+    return response.data;
+  }
+
+  async startMockTest(mockTestId: string) {
+    const response = await this.client.post("/mock-tests/start", { mock_test_id: mockTestId });
+    return response.data;
+  }
+
+  async submitMockTest(sessionId: string, data: { answers: { question_id: string; user_answer: string; time_spent_seconds?: number }[]; time_taken_seconds: number }) {
+    const response = await this.client.post(`/mock-tests/${sessionId}/submit`, data);
+    return response.data;
+  }
+
+  async getMockTestResult(sessionId: string) {
+    const response = await this.client.get(`/mock-tests/${sessionId}/result`);
+    return response.data;
+  }
+
   // Progress endpoints
   async getProgressOverview() {
     const response = await this.client.get("/progress/overview");

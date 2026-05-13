@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import init_db
-from app.routers import auth, quiz, tasks, progress
+from app.routers import auth, quiz, tasks, progress, mock_test
 
 
 @asynccontextmanager
@@ -37,6 +37,7 @@ app.include_router(auth.router, prefix="/api")
 app.include_router(quiz.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
 app.include_router(progress.router, prefix="/api")
+app.include_router(mock_test.router, prefix="/api")
 
 
 @app.get("/")
