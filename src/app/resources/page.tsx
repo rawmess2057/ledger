@@ -106,6 +106,14 @@ const cap1Exams: CAPExam[] = [
     description: "Mercantile Laws Multiple Choice Questions with answers",
     subjects: ["Law"],
   },
+  {
+    id: "commercial-maths-mcq",
+    name: "Commercial Mathematics and Statistics MCQ",
+    date: "2019",
+    pdfPath: "/doc/1573367563_CAP I_Paper 3B_MCQ.pdf",
+    description: "Commercial Mathematics and Statistics Multiple Choice Questions with answers",
+    subjects: ["Business Mathematics", "Statistics"],
+  },
 ];
 
 interface CAP3Exam {
@@ -124,6 +132,14 @@ const cap3Exams: CAP3Exam[] = [
     date: "December 2022",
     pdfPath: "/doc/Suggested_December_2022_CAP_III_Group_I.pdf",
     description: "CAP-III Level Examination Group I with suggested answers",
+    subjects: ["Advanced Taxation", "Advanced Assurance", "Financial Management"],
+  },
+  {
+    id: "june-2021-group2",
+    name: "June 2021 - Group II",
+    date: "June 2021",
+    pdfPath: "/doc/CAP-III_SA_Group-II_June2021_Final.pdf",
+    description: "CAP-III Level Examination Group II (SA) with suggested answers",
     subjects: ["Advanced Taxation", "Advanced Assurance", "Financial Management"],
   },
 ];
@@ -157,6 +173,16 @@ const cap2Exams: CAP2Exam[] = [
 ];
 
 const resources: Resource[] = [
+  {
+    id: "new-ca-syllabus",
+    title: "New CA Syllabus 2026",
+    type: "pdf",
+    size: "Updated",
+    description: "New CA Syllabus 2026 for ICAN examination",
+    downloads: 0,
+    rating: 0,
+    pdfPath: "/doc/New_CA_Syllabus.pdf",
+  },
   {
     id: "1",
     title: "ICAN Foundation Syllabus 2026",
